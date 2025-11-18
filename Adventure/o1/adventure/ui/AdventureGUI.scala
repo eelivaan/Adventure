@@ -4,15 +4,16 @@ import scala.swing.*
 import scala.swing.event.*
 import javax.swing.border.*
 import javax.swing.{Timer, UIManager}
-import java.awt.{Dimension, Font, Insets, Point}
+import java.awt.{Dimension, Font}
 import scala.collection.mutable.{ArrayBuffer, Queue}
 import scala.io.Source
-import scala.language.adhocExtensions  // enable extension of swing classes (is on by default?)
+import scala.language.adhocExtensions
 import o1.adventure.Adventure
 
+
 /**
- *
- * */
+ * Main Application object
+ */
 object AdventureGUI extends SimpleSwingApplication:
   // neat font for the text areas
   val niceFont = new Font("Consolas", Font.PLAIN, 14)
@@ -22,9 +23,9 @@ object AdventureGUI extends SimpleSwingApplication:
   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
   UIManager.put("Panel.background", bgcolor)
 
-  val game = new Adventure()
+  var game = new Adventure()
   val messageBuffer = Queue[Char]()
-  val commandHistory = ArrayBuffer[String]()
+  val commandHistory = ArrayBuffer[String]("go up", "go down", "go right", "go left")
 
   // Components:
 
@@ -53,9 +54,9 @@ object AdventureGUI extends SimpleSwingApplication:
     focusable = false
     reactions += { case e: ButtonClicked => showHelp() }
 
-  val canvas = new MyCanvas():
+  val canvas = new Canvas():
     contents += textDispaly
-    contents += FlowPanel(inputField, helpBtn)
+    contents += new FlowPanel(inputField, helpBtn)
     border = new EmptyBorder(10,10,10,10)
     gameRef = Some(game)
 
@@ -71,13 +72,10 @@ object AdventureGUI extends SimpleSwingApplication:
           // submit command
           case Key.Enter =>
             val command = inputField.text.trim
-            if game.gameRunning && command.nonEmpty then
-              if commandHistory.lastOption != Some(command) then
-                commandHistory += command
-              val response = game.player.parseCommand(command)
-              inputField.text = ""
-              if response.nonEmpty then
-                showMessage(response)
+            if command == "restart" then
+              restartGame()
+            else if game.gameRunning && command.nonEmpty then
+              submitCommand(command)
 
           // scroll through previous commands
           case Key.Up | Key.Down =>
@@ -103,6 +101,7 @@ object AdventureGUI extends SimpleSwingApplication:
     this.pack()
     this.centerOnScreen()
     inputField.requestFocusInWindow()
+    canvas.centerPlayerOnScreen()
   end top
 
 
@@ -113,17 +112,30 @@ object AdventureGUI extends SimpleSwingApplication:
 
   showMessage(game.welcomeMessage)
 
+
+  private def restartGame() =
+    game = new Adventure()
+    canvas.gameRef = Some(game)
+    canvas.centerPlayerOnScreen()
+    showMessage("")
+    inputField.text = ""
+
+
   private def onTick() =
     val curTime = System.currentTimeMillis()
 
     if game.gameRunning then
       val deltaTime = (curTime - prevTimeStamp) / 1000.0
       game.agents.foreach(_.tick(deltaTime))
+      canvas.keepPlayerOnScreen(deltaTime)
 
       if game.isComplete then
         showMessage(game.victoryMessage)
         game.gameRunning = false
         game.player.cheer = true
+      else if game.isOver then
+        showMessage(game.lostMessage)
+        game.gameRunning = false
 
     // type characters onto screen from the message buffer
     if this.messageBuffer.nonEmpty then
@@ -134,7 +146,18 @@ object AdventureGUI extends SimpleSwingApplication:
   end onTick
 
 
+  def submitCommand(command: String) =
+    commandHistory.filterInPlace(_ != command)
+    commandHistory += command
+
+    val response = game.player.parseCommand(command)
+    showMessage(response)
+    inputField.text = ""
+
+
   def showMessage(message: String) =
+    if this.messageBuffer.isEmpty then
+      textDispaly.text = ""
     this.messageBuffer ++= (message + "\n").toList
 
 
@@ -143,6 +166,7 @@ object AdventureGUI extends SimpleSwingApplication:
       visible = true
       title = "Help"
       minimumSize = new Dimension(300,300)
+
       contents = new ScrollPane():
         contents = new TextArea():
           background = bgcolor

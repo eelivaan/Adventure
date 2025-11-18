@@ -10,9 +10,16 @@ import scala.swing.Orientation.{Horizontal, Vertical}
 class Corridor(
       val roomA: Room,
       val roomB: Room,
-      var blocked: Boolean = true,
+      private var lockingRiddle: Option[Riddle] = None,
       private var hidden: Boolean = true
     ):
+
+  lockingRiddle.foreach(_.questioner = Some(this))
+  private var isLocked = lockingRiddle.isDefined
+
+  def blocked = this.isLocked
+
+  def riddle = lockingRiddle
 
   // the corridor automatically fits itself between the rooms
   val dx = roomB.cx - roomA.cx
@@ -36,34 +43,58 @@ class Corridor(
   val cy = roomA.cy + dy.sign * (roomA.height/2 + (dy.abs - rh) / 2)
   // width of the corridor (in x or y direction depending on orientation)
   val width = 50
-  val length = if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh
+  val length = (if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh) + 10  // small offset to account for antialiasing
 
   /**
    * Render this corridor into given graphics context
    */
-  def render(g: Graphics2D) =
-    val w = if orientation == Horizontal then this.length else this.width
-    val h = if orientation == Horizontal then this.width else this.length
-    g.setColor(cc.floorColor)
-    g.fillRect(cx-w/2, cy-h/2, w,h)
+  def render(g: Graphics2D, pass: Int) =
+    var w = if orientation == Horizontal then this.length else this.width
+    var h = if orientation == Horizontal then this.width else this.length
 
-    if this.blocked then
-      g.setColor(cc.doorColor)
-      if orientation == Horizontal then
-        g.fillRect(cx-10, cy-h/2, 20,h)
-      else
-        g.fillRect(cx-w/2, cy-10, w,20)
-
-    if this.hidden then
-      g.setColor(cc.backgroundColor)
+    if pass == 1 then
+      g.setColor(cc.floorColor)
       g.fillRect(cx-w/2, cy-h/2, w,h)
 
+      if this.blocked then
+        g.setColor(cc.doorColor)
+        if orientation == Horizontal then
+          g.fillRect(cx-10, cy-h/2, 20,h)
+        else
+          g.fillRect(cx-w/2, cy-10, w,20)
+
+    else if pass == 2 && this.hidden then
+      // draw a bit larger rectangle to cover
+      w += 5; h += 5
+      g.setColor(cc.backgroundColor)
+      g.fillRect(cx-w/2, cy-h/2, w,h)
   end render
+
+  /**
+   * Returns the room on the other end of this corridor
+   */
+  def otherRoom(queryRoom: Room) =
+    if queryRoom == roomA then roomB else roomA
 
   /**
    * Reveal this corridor to the player
    */
   def reveal(): Unit =
     this.hidden = false
+
+  /**
+   * Try to unlock the passage should it be blocked.
+   */
+  def unlock(answer: String): String =
+    this.lockingRiddle match {
+      case Some(riddle) =>
+        if answer == riddle.answer then
+          this.isLocked = false
+          "Correct."
+        else
+          "Wrong answer."
+      case None =>
+        ""
+    }
 
 end Corridor

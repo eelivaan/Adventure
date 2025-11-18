@@ -4,7 +4,7 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import scala.collection.mutable.Map
 import javax.imageio.ImageIO
-import java.io.{File, IOException}
+import java.io.File
 import scala.swing.Graphics2D
 import scala.Console
 import scala.math.sin
@@ -13,7 +13,7 @@ import scala.math.sin
  * Agents are entitites controlled by either a player or an AI.
  * They move within the game world and may possess items that they have picked.
  */
-trait Agent(startingRoom: Room):
+trait Agent(startingRoom: Room, val game: Adventure):
 
   private var currentRoom = startingRoom
   // the room that we are on our way to
@@ -24,6 +24,8 @@ trait Agent(startingRoom: Room):
   val size = 30
   val speed = 80.0 // pixels per second
   var cheer = false
+  private var isAlive = true
+  def isHostile = false
 
   private val possessedItems = Map[String, Item]()
 
@@ -35,6 +37,13 @@ trait Agent(startingRoom: Room):
 
   /** Whether the agent is moving */
   def isMoving = this.targetRoom.isDefined
+
+  def touches(other: Agent) = (this.cx - other.cx).abs.max((this.cy - other.cy).abs) < (this.size/2 + other.size/2)
+
+  def alive = this.isAlive
+
+  def kill() =
+    this.isAlive = false
 
   /**
    * Try to move through the corridor into room on the other end.
@@ -62,11 +71,11 @@ trait Agent(startingRoom: Room):
    */
   def render(g: Graphics2D): Unit =
     this.icon match {
-      case Some(value) =>
+      case Some(value) if alive =>
         val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
         g.drawImage(value, cx-size/2, cy-size/2+dy.toInt, size,size, null)
-      case None =>
-        g.setColor(new Color(255,0,0))
+      case _ =>
+        g.setColor(new Color(100,0,0))
         g.fillOval(cx-size/2, cy-size/2, size,size)
     }
 

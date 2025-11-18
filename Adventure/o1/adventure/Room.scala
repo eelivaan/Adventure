@@ -21,24 +21,41 @@ class Room(
    */
   val corridors = Map[Dir, Corridor]()
 
+  var spawnEnemy = false
+
+  var hint = ""
+
   /**
    * Render this room into given graphics context
    */
-  def render(g: Graphics2D) =
-    g.setColor(if this.isFinish then cc.finishColor else cc.floorColor)
-    g.fillRoundRect(cx-width/2, cy-height/2, width,height, 20,20)
+  def render(g: Graphics2D, pass: Int) =
+    if pass == 1 then
+      g.setColor(if this.isFinish then cc.finishColor else cc.floorColor)
+      g.fillRoundRect(cx-width/2, cy-height/2, width,height, 20,20)
 
-    if this.hidden then
+      if this.hint.nonEmpty then
+        g.setColor(cc.hintColor)
+        g.drawString(this.hint, (cx-width/2.2).toInt, (cy+height/2.5).toInt)
+
+    else if pass == 2 && this.hidden then
+      // draw a bit larger rectangle to cover
+      val (width,height) = (this.width+5, this.height+5)
       g.setColor(cc.backgroundColor)
       g.fillRect(cx-width/2, cy-height/2, width,height)
   end render
 
   /**
-   * Reveal this (yet hidden) room to the player
+   * Reveal this (yet hidden) room to the player.
+   * Also reveals any connected corridors.
    */
   def reveal(): Unit =
     this.hidden = false
-    this.corridors.values.foreach(_.reveal())
+    this.corridors.values.foreach( corridor =>
+      corridor.reveal()
+      // rooms with enemies need to be shown early enough
+      if corridor.otherRoom(this).spawnEnemy then
+        corridor.otherRoom(this).reveal()
+    )
 
 end Room
 

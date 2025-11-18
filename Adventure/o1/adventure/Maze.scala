@@ -1,14 +1,7 @@
 package o1.adventure
 
-import java.awt.Color
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
-
-// some color constants
-object cc:
-  val floorColor = new Color(100,100,150)
-  val doorColor = new Color(50,50,50)
-  val backgroundColor = new Color(0,0,0)
-  val finishColor = new Color(100,150,100)
+import scala.util.Random
 
 
 /**
@@ -34,13 +27,6 @@ object Dir:
       case _: Throwable => Invalid
     }
 
-val mazeDef = """
-A-A-A-X
-| |   |
-A X-S A
-| |   |
-A-A-A-A
-"""
 
 /**
  * Maze is the game world that consists of Rooms and Corridors that connect them.
@@ -49,18 +35,22 @@ A-A-A-A
  */
 class Maze:
 
-  var rooms = ArrayBuffer[ArrayBuffer[Option[Room]]]()
-  val corridors = ListBuffer[Corridor]()
+  private var rooms = ArrayBuffer[ArrayBuffer[Option[Room]]]()
+  def roomsIterator = rooms.flatten.flatten.toVector
+
+  private val corridors = ListBuffer[Corridor]()
+  def corridorsIterator = corridors.toVector
+
+  private val rng = Random(1234)
+
   var startingRoom: Room = null
-  var renderOrigin = (100,100)
-  val startHidden = false
 
   init()
   startingRoom.reveal()
 
   // create the maze based on pattern string
   def init() =
-    var strLines = mazeDef.linesIterator.toVector.map(_.trim).filter(_.nonEmpty)
+    var strLines = mazePattern.linesIterator.toVector.map(_.trim).filter(_.nonEmpty)
     val lineMaxLen = strLines.map(_.length).max
     strLines = strLines.map(_.padTo(lineMaxLen, ' '))  // ensure each line has the same width
 
@@ -83,44 +73,57 @@ class Maze:
 
     val gridWidth = roomsDescription.head.length
     val gridHeight = roomsDescription.length
+
     // create 2D grid of rooms
     rooms = ArrayBuffer.from(
-      for iy <- (0 until gridHeight) yield
-        ArrayBuffer.from(
+      for iy <- (0 until gridHeight) yield ArrayBuffer.from(
           for ix <- (0 until gridWidth) yield
+            val (cx,cy) = (ix*200,iy*200)
             roomsDescription(iy)(ix) match {
-              case ch: ('A'|'S'|'X') =>
-                val newRoom = new Room(ix*150,iy*150, 100,100, hidden = startHidden, isFinish = ch=='X')
-                if ch == 'S' then  // set as starting room
-                  startingRoom = newRoom
+              // room with enemy
+              case '#' =>
+                val newRoom = new Room(cx, cy, 150,150)
+                newRoom.spawnEnemy = true
                 Some(newRoom)
+              // other type of room
+              case ch if !ch.isWhitespace =>
+                val size = rng.between(100,190)
+                val newRoom = new Room(cx,cy, size,size, hidden = true, isFinish = ch=='X')
+                if ch == '1' then  // set as starting room
+                  startingRoom = newRoom
+                newRoom.hint = roomHints.getOrElse(ch, "")
+                Some(newRoom)
+              // no room
               case _ =>
                 None
             }
         ))
+
     // create corridors
     for (row,iy) <- corridorsDescription.zipWithIndex do
       for (ch,ix) <- row.zipWithIndex do
-        ch match {
-          case '-' =>
+        if !ch.isWhitespace then
+          // even rows have horizontal corridors
+          if iy % 2 == 0 then
             (rooms(iy/2)(ix), rooms(iy/2)(ix+1)) match {
               case (Some(roomA), Some(roomB)) =>
-                corridors += new Corridor(roomA, roomB, blocked = true, hidden = startHidden)
+                corridors += new Corridor(roomA, roomB, corridorRiddles.get(ch))
               case _ =>
             }
-          case '|' =>
+          // odd rows have vertical corridors
+          else
             (rooms(iy/2)(ix), rooms(iy/2+1)(ix)) match {
               case (Some(roomA), Some(roomB)) =>
-                corridors += new Corridor(roomA, roomB, blocked = true, hidden = startHidden)
+                corridors += new Corridor(roomA, roomB, corridorRiddles.get(ch))
               case _ =>
             }
-          case _ =>
-        }
+          end if
+        end if
 
     // starting room is needed even if it wasn't defined in pattern
     if startingRoom == null then
       println("Starting room is not defined!")
-      startingRoom = rooms.head.head.get
+      startingRoom = new Room(0,0,100,100)
   end init
 
 end Maze

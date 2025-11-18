@@ -7,14 +7,14 @@ package o1.adventure
   * for instance.
   *
   */
-class Player(startingRoom: Room) extends Agent(startingRoom):
+class Player(startingRoom: Room, game: Adventure) extends Agent(startingRoom, game):
 
   override protected def imageFile: String = "Adventure/bat.png"
 
-  private val commandMap = Map("go" -> go, "open" -> unlockRoom)
+  private val commandMap = Map("go" -> go, "cheatcode" -> cheat)
 
-  /**  */
-  private val lastQuestion: Option[String] = None
+  /** The question i.e. riddle that was last asked */
+  private var lastQuestion: Option[Riddle] = None
 
   /**
    * Parse and execute actions based on given user prompt.
@@ -22,33 +22,62 @@ class Player(startingRoom: Room) extends Agent(startingRoom):
    */
   def parseCommand(cmd: String): String =
     val verb = cmd.trim.takeWhile(!_.isWhitespace).toLowerCase
-    val modifier = cmd.drop(verb.length).trim.toLowerCase
-    this.commandMap.get(verb).map( func => func(modifier) ).getOrElse("Invalid command")
+    // execute command
+    if this.commandMap.contains(verb) then
+      this.lastQuestion = None  // forget about the question if one existed
+      val modifier = cmd.drop(verb.length).trim.toLowerCase
+      this.commandMap.get(verb).map( func => func(modifier) ).getOrElse("")
+    // answer a question
+    else if lastQuestion.isDefined then
+      this.lastQuestion.fold("")( riddle =>
+        riddle.questioner match {
+          case Some(corridor: Corridor) =>
+            corridor.unlock(cmd)
+          case _ =>
+            ""
+        }
+      )
+    // invalid command
+    else
+      s"Invalid command \"$cmd\""
 
   /**
    * Go into the next room in specified direction if possible
    */
   def go(direction: String): String =
-    if !this.isMoving then
+    if this.isMoving then
+      "Wait until you stop"
+    else
       this.location.corridors.get(Dir.fromString(direction)) match {
         case Some(corridor) =>
-          this.moveThrough(corridor) match {
-            case Some(room) =>
-              room.reveal()
-              ""
-            case None =>
-              "That corridor is blocked!"
-          }
+          if corridor.blocked then
+            this.lastQuestion = corridor.riddle
+            corridor.riddle.fold("")(_.question)
+          else
+            this.moveThrough(corridor) match {
+              case Some(room) =>
+                room.reveal()
+                ""
+              case None =>
+                "That corridor is blocked!"
+            }
         case None =>
-          s"Can't go $direction"
+          s"You can't go $direction"
       }
-    else
-      "Wait until you stop"
   end go
 
-  def unlockRoom(str: String): String =
-    this.location.corridors.values.foreach(_.blocked = false)
-    ""
+  def cheat(command: String): String =
+    var answer = ""
+    command match {
+      case "revealall" =>
+        game.maze.roomsIterator.foreach(_.reveal())
+      case "unlock" =>
+        this.location.corridors.values.foreach( corridor =>
+          corridor.unlock(corridor.riddle.map(_.answer).getOrElse(""))
+        )
+      case _ =>
+    }
+    answer
 
 end Player
 

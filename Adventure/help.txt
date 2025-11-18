@@ -1,7 +1,12 @@
-Usable keys:
+Useful keys:
 [Enter]         Submit command
 [Arrow Up/Down] Scroll through previous commands
 [Esc]           Exit application
 
+
 Available commands:
-go left/right/up/down
+go left
+go right
+go up
+go down
+restart
