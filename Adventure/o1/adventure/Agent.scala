@@ -7,7 +7,18 @@ import javax.imageio.ImageIO
 import java.io.File
 import scala.swing.Graphics2D
 import scala.Console
-import scala.math.sin
+import scala.math.{sin, min, max}
+
+def loadSprite(filename: String): Option[BufferedImage] =
+  try
+    Some(ImageIO.read(new File(filename)))
+  catch
+    case _ =>
+      Console.err.println(s"""Error reading image file "$filename"""")
+      None
+
+val splatterSprite = loadSprite("Adventure/sprites/splatter.png")
+
 
 /**
  * Agents are entitites controlled by either a player or an AI.
@@ -16,9 +27,9 @@ import scala.math.sin
 trait Agent(startingRoom: Room, val game: Adventure):
 
   private var currentRoom = startingRoom
-  // the room that we are on our way to
+  // the room that we are moving to
   private var targetRoom: Option[Room] = None
-  private var animationKey = 0.0
+  private var (tgtX,tgtY) = (0,0)
 
   var (cx,cy) = (startingRoom.cx, startingRoom.cy)
   val size = 30
@@ -35,10 +46,11 @@ trait Agent(startingRoom: Room, val game: Adventure):
   /** Returns the agent's current possessions */
   def inventory = this.possessedItems
 
-  /** Whether the agent is moving */
   def isMoving = this.targetRoom.isDefined
 
-  def touches(other: Agent) = (this.cx - other.cx).abs.max((this.cy - other.cy).abs) < (this.size/2 + other.size/2)
+  def touches(other: Agent) =
+    if other == this then false else
+    (this.cx - other.cx).abs.max((this.cy - other.cy).abs) < (this.size/2 + other.size/2)
 
   def alive = this.isAlive
 
@@ -47,59 +59,67 @@ trait Agent(startingRoom: Room, val game: Adventure):
 
   /**
    * Try to move through the corridor into room on the other end.
-   * Returns the other Room or None if the corridor is unpassable
+   * Returns the target Room or None if the corridor is unpassable
    */
   def moveThrough(corridor: Corridor): Option[Room] =
-    if !corridor.blocked then
-      this.targetRoom = Some(if currentRoom == corridor.roomA then corridor.roomB else corridor.roomA)
-      this.targetRoom
+    if !corridor.blocked && !this.isMoving then
+      setTargetRoom(corridor.otherRoom(this.location))
     else
       None
 
-  // try to load a fancy image to be this agent's visual representation
+  private def setTargetRoom(room: Room) =
+    this.targetRoom = Some(room)
+    this.tgtX = room.cx
+    this.tgtY = room.cy
+    this.targetRoom
+
+  /**
+   * Invert any active movement
+   */
+  def retreat(): Unit =
+    if this.isMoving then
+      setTargetRoom(this.currentRoom)
+
   protected def imageFile: String
-  private val icon: Option[BufferedImage] =
-    try
-      Some(ImageIO.read(new File(this.imageFile)))
-    catch
-      case _ =>
-        Console.err.println(s"""Error reading file "$imageFile"""")
-        None
+  // try to load a fancy image to be this agent's visual representation
+  private val sprite = loadSprite(this.imageFile)
 
   /**
    * Render this agent into given graphics context
    */
   def render(g: Graphics2D): Unit =
-    this.icon match {
-      case Some(value) if alive =>
-        val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
-        g.drawImage(value, cx-size/2, cy-size/2+dy.toInt, size,size, null)
-      case _ =>
-        g.setColor(new Color(100,0,0))
-        g.fillOval(cx-size/2, cy-size/2, size,size)
-    }
+    if !this.alive then
+      splatterSprite.foreach(sprite => g.drawImage(sprite, cx-20,cy-20, 40,40, null))
+    else
+      this.sprite match {
+        case Some(value) if alive =>
+          val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
+          g.drawImage(value, cx-size/2, cy-size/2+dy.toInt, size,size, null)
+        case _ =>
+          g.setColor(new Color(100,0,0))
+          g.fillOval(cx-size/2, cy-size/2, size,size)
+      }
 
   /**
-   * Update coordinates etc. as time passes
+   * Update coordinates etc. as time passes.
+   * Only called for living agents.
    */
   def tick(dt: Double): Unit =
-    this.targetRoom match {
-      case Some(targetRoom) =>
-        // linear interpolation of position from previous room to next room
-        val dx = targetRoom.cx - currentRoom.cx
-        val dy = targetRoom.cy - currentRoom.cy
-        this.cx = (currentRoom.cx + dx * animationKey).toInt
-        this.cy = (currentRoom.cy + dy * animationKey).toInt
-        animationKey += dt * speed / dx.abs.max(dy.abs)
-        if animationKey > 1.0 then
-          this.cx = targetRoom.cx
-          this.cy = targetRoom.cy
-          this.currentRoom = targetRoom
-          this.targetRoom = None
-          animationKey = 0.0
-      case None =>
-        ()
-    }
+    if this.isMoving then
+      // animated movement from previous room to next room
+      val dx = this.tgtX - this.cx
+      val dy = this.tgtY - this.cy
+      val maxMovement = (this.speed * dt).toInt
+      if maxMovement > max(dx.abs, dy.abs) then
+        this.cx = this.tgtX
+        this.cy = this.tgtY
+        targetRoom.foreach(this.currentRoom = _)
+        this.targetRoom = None
+      else
+        this.cx += dx.sign * min(dx.abs, maxMovement)
+        this.cy += dy.sign * min(dy.abs, maxMovement)
+  end tick
+
 
 end Agent
 

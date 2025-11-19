@@ -21,6 +21,8 @@ class Corridor(
 
   def riddle = lockingRiddle
 
+  def spawnGateKeeper = this.lockingRiddle.exists(_.withGateKeeper)
+
   // the corridor automatically fits itself between the rooms
   val dx = roomB.cx - roomA.cx
   val dy = roomB.cy - roomA.cy
@@ -41,9 +43,13 @@ class Corridor(
   // coordinates for the center
   val cx = roomA.cx + dx.sign * (roomA.width/2 + (dx.abs - rw) / 2)
   val cy = roomA.cy + dy.sign * (roomA.height/2 + (dy.abs - rh) / 2)
+
   // width of the corridor (in x or y direction depending on orientation)
   val width = 50
   val length = (if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh) + 10  // small offset to account for antialiasing
+
+  private var doorAnimationKey = if this.blocked then 1.0 else 0.0
+  private var doorAnimation = 0.0
 
   /**
    * Render this corridor into given graphics context
@@ -56,12 +62,12 @@ class Corridor(
       g.setColor(cc.floorColor)
       g.fillRect(cx-w/2, cy-h/2, w,h)
 
-      if this.blocked then
+      if !spawnGateKeeper && doorAnimationKey > 0.0 then
         g.setColor(cc.doorColor)
         if orientation == Horizontal then
-          g.fillRect(cx-10, cy-h/2, 20,h)
+          g.fillRect(cx-10, cy-h/2, 20,(h * doorAnimationKey).toInt)
         else
-          g.fillRect(cx-w/2, cy-10, w,20)
+          g.fillRect(cx-w/2, cy-10, (w * doorAnimationKey).toInt,20)
 
     else if pass == 2 && this.hidden then
       // draw a bit larger rectangle to cover
@@ -69,6 +75,9 @@ class Corridor(
       g.setColor(cc.backgroundColor)
       g.fillRect(cx-w/2, cy-h/2, w,h)
   end render
+
+  def tick(dt: Double) =
+    this.doorAnimationKey = (doorAnimationKey + doorAnimation.sign * 0.3 * dt).min(1.0).max(0.0)
 
   /**
    * Returns the room on the other end of this corridor
@@ -90,6 +99,7 @@ class Corridor(
       case Some(riddle) =>
         if answer == riddle.answer then
           this.isLocked = false
+          this.doorAnimation = -1 // start opening
           "Correct."
         else
           "Wrong answer."

@@ -2,7 +2,5 @@
 Cheat codes
 
 Show all rooms:
-"cheatcode revealall"
 
 Open surrounding corridors:
-"cheatcode unlock"

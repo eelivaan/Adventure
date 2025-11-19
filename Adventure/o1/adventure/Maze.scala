@@ -50,7 +50,7 @@ class Maze:
 
   // create the maze based on pattern string
   def init() =
-    var strLines = mazePattern.linesIterator.toVector.map(_.trim).filter(_.nonEmpty)
+    var strLines = mazePattern.linesIterator.toVector.map(_.stripTrailing).filter(_.nonEmpty)
     val lineMaxLen = strLines.map(_.length).max
     strLines = strLines.map(_.padTo(lineMaxLen, ' '))  // ensure each line has the same width
 
@@ -80,18 +80,14 @@ class Maze:
           for ix <- (0 until gridWidth) yield
             val (cx,cy) = (ix*200,iy*200)
             roomsDescription(iy)(ix) match {
-              // room with enemy
-              case '#' =>
-                val newRoom = new Room(cx, cy, 150,150)
-                newRoom.spawnEnemy = true
-                Some(newRoom)
-              // other type of room
               case ch if !ch.isWhitespace =>
-                val size = rng.between(100,190)
+                val size = rng.between(120,160)
                 val newRoom = new Room(cx,cy, size,size, hidden = true, isFinish = ch=='X')
                 if ch == '1' then  // set as starting room
                   startingRoom = newRoom
                 newRoom.hint = roomHints.getOrElse(ch, "")
+                newRoom.spawnBoundEnemy = roomsWithBoundEnemies.contains(ch)
+                newRoom.spawnMovingEnemy = roomsWithFreeEnemies.contains(ch)
                 Some(newRoom)
               // no room
               case _ =>

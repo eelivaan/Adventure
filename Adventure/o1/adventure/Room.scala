@@ -21,9 +21,12 @@ class Room(
    */
   val corridors = Map[Dir, Corridor]()
 
-  var spawnEnemy = false
+  def neighbouringRooms: Map[Dir, Room] =
+    this.corridors.map( (dir,corridor) => dir -> corridor.otherRoom(this) )
 
   var hint = ""
+  var spawnBoundEnemy = false
+  var spawnMovingEnemy = false
 
   /**
    * Render this room into given graphics context
@@ -52,9 +55,10 @@ class Room(
     this.hidden = false
     this.corridors.values.foreach( corridor =>
       corridor.reveal()
-      // rooms with enemies need to be shown early enough
-      if corridor.otherRoom(this).spawnEnemy then
-        corridor.otherRoom(this).reveal()
+      // rooms with enemies need to be shown earlier
+      val otherRoom = corridor.otherRoom(this)
+      if otherRoom.spawnBoundEnemy then
+        otherRoom.reveal()
     )
 
 end Room

@@ -15,15 +15,27 @@ class Adventure:
   val player = Player(maze.startingRoom, this)
 
   /** All agents in the world including the player */
-  val agents: Vector[Agent] = player +: maze.roomsIterator.filter(_.spawnEnemy).map(room => new Slaybot(room, this))
+  val agents: Vector[Agent] = player +: Vector.from(
+    maze.roomsIterator.filter(room => room.spawnBoundEnemy || room.spawnMovingEnemy).map(
+      room => new Slaybot(room, this, room.spawnMovingEnemy)
+    ) ++ (
+    maze.corridorsIterator.filter(_.spawnGateKeeper).map(
+      corridor => new Gatekeeper(corridor, this)
+    )
+  ))
 
   var gameRunning = true
+
+  def tick(dt: Double) =
+    agents.filter(_.alive).foreach(_.tick(dt))
+    maze.corridorsIterator.foreach(_.tick(dt))
+  end tick
 
 
   /** Determines if the adventure is complete, that is, if the player has won. */
   def isComplete = player.location.isFinish
 
-  /** Determines whether the player has won, lost, or quit, thereby ending the game. */
+  /** Determines whether the player lost thereby ending the game. */
   def isOver = !player.alive
 
   /** Returns a message that is to be displayed to the player at the beginning of the game. */
@@ -34,7 +46,7 @@ class Adventure:
 
   def victoryMessage = "You made it! Now you're free!"
 
-  def lostMessage = "GAME OVER! You died.\n\nTry \"restart\""
+  def gameOverMessage = "GAME OVER! You died."
 
 end Adventure
 

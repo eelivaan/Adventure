@@ -2,7 +2,7 @@ package o1.adventure.ui
 
 import o1.adventure.Adventure
 
-import java.awt.RenderingHints
+import java.awt.{RenderingHints, Font}
 import scala.swing.*
 import scala.language.adhocExtensions  // enable extension of swing classes (is off by default?)
 
@@ -11,8 +11,10 @@ import scala.language.adhocExtensions  // enable extension of swing classes (is 
  */
 class Canvas extends BoxPanel(Orientation.Vertical):
 
+  val hintFont = new Font("Times New Roman", Font.ITALIC, 14)
   var gameRef: Option[Adventure] = None
   var renderOrigin = (100,100)
+  var textToHighlight = ""
 
   /**
    * Move render origin so that player is right in the center of the screen
@@ -51,6 +53,7 @@ class Canvas extends BoxPanel(Orientation.Vertical):
 
     // draw the maze and stuff
     gameRef.foreach( game =>
+      g.setFont(hintFont)
       val (tx,ty) = this.renderOrigin
       g.translate(tx,ty)
 
@@ -67,6 +70,12 @@ class Canvas extends BoxPanel(Orientation.Vertical):
       game.maze.corridorsIterator.foreach(_.render(g, 2))
 
       g.translate(-tx,-ty)
+
+      // draw semi-transparent background for messages so that they can be seen more clearly
+      g.setColor(new Color(0,0,0, 150))
+      val (cw,ch) = (8, 17)
+      for (line,iy) <- textToHighlight.linesIterator.zipWithIndex do
+        g.fillRect(10, 10+iy*ch, line.length*cw,ch)
     )
   end paintComponent
 

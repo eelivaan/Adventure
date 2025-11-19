@@ -1,6 +1,7 @@
 Useful keys:
 [Enter]         Submit command
 [Arrow Up/Down] Scroll through previous commands
+[Ctrl]          Retreat quickly
 [Esc]           Exit application
 
 

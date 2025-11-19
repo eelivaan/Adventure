@@ -36,7 +36,7 @@ object AdventureGUI extends SimpleSwingApplication:
     background = new Color(0,0,0, 0)
     foreground = fgcolor
     opaque = false
-    preferredSize = new Dimension(600,500)
+    preferredSize = new Dimension(600,600)
     font = niceFont
     focusable = false
 
@@ -76,6 +76,10 @@ object AdventureGUI extends SimpleSwingApplication:
               restartGame()
             else if game.gameRunning && command.nonEmpty then
               submitCommand(command)
+
+          // retreaval hotkey
+          case Key.Control if game.gameRunning =>
+            game.player.retreat()
 
           // scroll through previous commands
           case Key.Up | Key.Down =>
@@ -126,7 +130,7 @@ object AdventureGUI extends SimpleSwingApplication:
 
     if game.gameRunning then
       val deltaTime = (curTime - prevTimeStamp) / 1000.0
-      game.agents.foreach(_.tick(deltaTime))
+      game.tick(deltaTime)
       canvas.keepPlayerOnScreen(deltaTime)
 
       if game.isComplete then
@@ -134,14 +138,17 @@ object AdventureGUI extends SimpleSwingApplication:
         game.gameRunning = false
         game.player.cheer = true
       else if game.isOver then
-        showMessage(game.lostMessage)
+        showMessage(game.gameOverMessage)
         game.gameRunning = false
+        inputField.text = "restart"
 
     // type characters onto screen from the message buffer
     if this.messageBuffer.nonEmpty then
       textDispaly.text += this.messageBuffer.dequeue()
 
+    canvas.textToHighlight = textDispaly.text
     canvas.repaint()
+
     prevTimeStamp = curTime
   end onTick
 
@@ -149,7 +156,6 @@ object AdventureGUI extends SimpleSwingApplication:
   def submitCommand(command: String) =
     commandHistory.filterInPlace(_ != command)
     commandHistory += command
-
     val response = game.player.parseCommand(command)
     showMessage(response)
     inputField.text = ""
@@ -168,7 +174,7 @@ object AdventureGUI extends SimpleSwingApplication:
       minimumSize = new Dimension(300,300)
 
       contents = new ScrollPane():
-        contents = new TextArea():
+        contents = new TextArea("(C) 2025 Elias Vesanen\n\n"):
           background = bgcolor
           foreground = new Color(100,200,255)
           font = niceFont
@@ -176,7 +182,7 @@ object AdventureGUI extends SimpleSwingApplication:
           border = new EmptyBorder(10,10,10,10)
           try
             val file = Source.fromFile("Adventure/help.txt")
-            this.text = file.mkString
+            this.text += file.mkString
             file.close()
           catch
             case _ => Console.err.println("Failed to read help file")
