@@ -2,8 +2,9 @@ package o1.adventure
 
 import scala.math.{sin,cos}
 
-class Slaybot(startingRoom: Room, game: Adventure,
-              val huntsPlayer: Boolean) extends Agent(startingRoom, game):
+class Slaybot(startingRoom: Room,
+              val game: Adventure,
+              val huntsPlayer: Boolean) extends Agent(startingRoom):
 
   override protected def imageFile: String = "Adventure/sprites/slaybot.png"
 

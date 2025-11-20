@@ -24,7 +24,7 @@ val splatterSprite = loadSprite("Adventure/sprites/splatter.png")
  * Agents are entitites controlled by either a player or an AI.
  * They move within the game world and may possess items that they have picked.
  */
-trait Agent(startingRoom: Room, val game: Adventure):
+trait Agent(startingRoom: Room):
 
   private var currentRoom = startingRoom
   // the room that we are moving to
@@ -59,7 +59,7 @@ trait Agent(startingRoom: Room, val game: Adventure):
 
   /**
    * Try to move through the corridor into room on the other end.
-   * Returns the target Room or None if the corridor is unpassable
+   * Returns the target room or None if the corridor is unpassable
    */
   def moveThrough(corridor: Corridor): Option[Room] =
     if !corridor.blocked && !this.isMoving then

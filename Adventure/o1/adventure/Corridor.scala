@@ -4,24 +4,15 @@ import scala.swing.Graphics2D
 import scala.swing.Orientation.{Horizontal, Vertical}
 
 /**
- * A Corridor connects two Rooms and allows the player two move between them.
+ * A Corridor connects two Rooms and allows the player and other agents to move between them.
  * The Corridor may be blocked and the player has to perform some tasks to open it.
  */
 class Corridor(
-      val roomA: Room,
-      val roomB: Room,
-      private var lockingRiddle: Option[Riddle] = None,
-      private var hidden: Boolean = true
-    ):
-
-  lockingRiddle.foreach(_.questioner = Some(this))
-  private var isLocked = lockingRiddle.isDefined
-
-  def blocked = this.isLocked
-
-  def riddle = lockingRiddle
-
-  def spawnGateKeeper = this.lockingRiddle.exists(_.withGateKeeper)
+                val roomA: Room,
+                val roomB: Room,
+                lockingMethod: Option[Riddle|Gatekeeper.type] = None,
+                private var hidden: Boolean = true
+              ):
 
   // the corridor automatically fits itself between the rooms
   val dx = roomB.cx - roomA.cx
@@ -48,7 +39,21 @@ class Corridor(
   val width = 50
   val length = (if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh) + 10  // small offset to account for antialiasing
 
-  private var doorAnimationKey = if this.blocked then 1.0 else 0.0
+  var lockingRiddle: Option[Riddle] = None
+  var gatekeeper: Option[Gatekeeper] = None
+
+  lockingMethod match {
+    case Some(riddle: Riddle) =>
+      riddle.questioner = Some(this)
+      this.lockingRiddle = Some(riddle)
+    case Some(x: Gatekeeper.type) =>
+      this.gatekeeper = Some(new Gatekeeper(this))
+    case None =>
+  }
+
+  private var isLocked = lockingRiddle.isDefined || gatekeeper.isDefined
+
+  private var doorAnimationKey = if this.lockingRiddle.isDefined then 1.0 else 0.0
   private var doorAnimation = 0.0
 
   /**
@@ -62,7 +67,7 @@ class Corridor(
       g.setColor(cc.floorColor)
       g.fillRect(cx-w/2, cy-h/2, w,h)
 
-      if !spawnGateKeeper && doorAnimationKey > 0.0 then
+      if doorAnimationKey > 0.0 then
         g.setColor(cc.doorColor)
         if orientation == Horizontal then
           g.fillRect(cx-10, cy-h/2, 20,(h * doorAnimationKey).toInt)
@@ -76,8 +81,30 @@ class Corridor(
       g.fillRect(cx-w/2, cy-h/2, w,h)
   end render
 
+
   def tick(dt: Double) =
-    this.doorAnimationKey = (doorAnimationKey + doorAnimation.sign * 0.3 * dt).min(1.0).max(0.0)
+    // door opening animation
+    this.doorAnimationKey = (doorAnimationKey + doorAnimation.sign * 0.4 * dt).min(1.0).max(0.0)
+
+
+  /** Whether this corridor is passable or not */
+  def blocked = this.isLocked
+
+  /**
+   * Get the riddle needed for unlocking this corridor.
+   */
+  def riddle: Option[Riddle] =
+    this.gatekeeper match {
+      case Some(gatekeeper) =>
+        Some(gatekeeper.riddle)
+      case None =>
+        this.lockingRiddle
+    }
+
+  def message: String =
+    gatekeeper.map(_.message).getOrElse(
+      lockingRiddle.map(_.question).getOrElse(
+        "That corridor is blocked!"))
 
   /**
    * Returns the room on the other end of this corridor
@@ -97,14 +124,22 @@ class Corridor(
   def unlock(answer: String): String =
     this.lockingRiddle match {
       case Some(riddle) =>
-        if answer == riddle.answer then
-          this.isLocked = false
-          this.doorAnimation = -1 // start opening
+        if riddle.testAnswer(answer) then
+          this.unlock()
           "Correct."
         else
           "Wrong answer."
       case None =>
         ""
     }
+
+  // unblock directly
+  def unlock(): Unit =
+    this.isLocked = false
+    this.doorAnimation = -1 // start door opening animation
+
+  def lock(): Unit =
+    this.isLocked = true
+    this.doorAnimation = 1 // start door closing animation
 
 end Corridor

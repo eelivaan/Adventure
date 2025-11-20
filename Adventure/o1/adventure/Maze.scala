@@ -30,8 +30,7 @@ object Dir:
 
 /**
  * Maze is the game world that consists of Rooms and Corridors that connect them.
- * The centers of the Rooms have to align on each column and row although
- * the spacing of those can be uneven to fit Rooms of different sizes.
+ * The centers of the Rooms align on a grid.
  */
 class Maze:
 
@@ -67,9 +66,9 @@ class Maze:
         if columnIndex % 2 != rowIndex % 2 then  // corridor locations alternate with rows
           corridorsDescription.last += ch
 
-    println(roomsDescription.mkString("\n"))
-    println()
-    println(corridorsDescription.mkString("\n"))
+    //println(roomsDescription.mkString("\n"))
+    //println()
+    //println(corridorsDescription.mkString("\n"))
 
     val gridWidth = roomsDescription.head.length
     val gridHeight = roomsDescription.length
@@ -86,8 +85,8 @@ class Maze:
                 if ch == '1' then  // set as starting room
                   startingRoom = newRoom
                 newRoom.hint = roomHints.getOrElse(ch, "")
-                newRoom.spawnBoundEnemy = roomsWithBoundEnemies.contains(ch)
-                newRoom.spawnMovingEnemy = roomsWithFreeEnemies.contains(ch)
+                newRoom.spawnBoundEnemy = (ch == '#')
+                newRoom.spawnChasingEnemy = (ch == '!')
                 Some(newRoom)
               // no room
               case _ =>
@@ -103,14 +102,14 @@ class Maze:
           if iy % 2 == 0 then
             (rooms(iy/2)(ix), rooms(iy/2)(ix+1)) match {
               case (Some(roomA), Some(roomB)) =>
-                corridors += new Corridor(roomA, roomB, corridorRiddles.get(ch))
+                corridors += new Corridor(roomA, roomB, corridorBlockings.get(ch))
               case _ =>
             }
           // odd rows have vertical corridors
           else
             (rooms(iy/2)(ix), rooms(iy/2+1)(ix)) match {
               case (Some(roomA), Some(roomB)) =>
-                corridors += new Corridor(roomA, roomB, corridorRiddles.get(ch))
+                corridors += new Corridor(roomA, roomB, corridorBlockings.get(ch))
               case _ =>
             }
           end if

@@ -7,7 +7,6 @@ import scala.swing.Graphics2D
  * A Room is a basic building block of the game world.
  * It has 1 to 4 references to Corridors that lead to other rooms.
  * Rooms are initially hidden and only revealed as the player progresses.
- * Despite the technical complexity, Rooms are allowed to be of different sizes to make the world more interesting.
  */
 class Room(
       val cx: Int, val cy: Int,
@@ -26,7 +25,7 @@ class Room(
 
   var hint = ""
   var spawnBoundEnemy = false
-  var spawnMovingEnemy = false
+  var spawnChasingEnemy = false
 
   /**
    * Render this room into given graphics context

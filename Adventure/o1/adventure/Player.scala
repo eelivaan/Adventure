@@ -7,18 +7,21 @@ import scala.collection.mutable.Queue
   * A player object’s state is mutable: the player’s location and possessions can change,
   * for instance.
   */
-class Player(startingRoom: Room, game: Adventure) extends Agent(startingRoom, game):
+class Player(startingRoom: Room,
+             val game: Adventure) extends Agent(startingRoom):
 
   override protected def imageFile: String = "Adventure/sprites/bat.png"
 
   override val speed = 90.0
 
-  private val commandMap = Map("go" -> go, "cheatcode" -> cheat)
-
-  /** The question i.e. riddle that was last asked */
+  /** The question i.e. riddle that was last presented */
   private var lastQuestion: Option[Riddle] = None
+  // only needed for cheating
+  private var answerToLastQuestion = ""
 
   val bufferedMoves = Queue[String]()
+
+  private val commandMap = Map("go" -> go, "cheatcode" -> cheat)
 
   /**
    * Parse and execute actions based on given user prompt.
@@ -38,8 +41,12 @@ class Player(startingRoom: Room, game: Adventure) extends Agent(startingRoom, ga
       this.lastQuestion.fold("")( riddle =>
         riddle.questioner match {
           case Some(corridor: Corridor) =>
-            corridor.unlock(cmd.toLowerCase)
+            corridor.unlock(cmd)
+          case Some(gatekeeper: Gatekeeper) =>
+            gatekeeper.tryToAnswer(cmd, this.location)
           case _ =>
+            // if the riddle, for some reason, has no questioner then it can be forgotten
+            this.lastQuestion = None
             ""
         }
       )
@@ -68,7 +75,8 @@ class Player(startingRoom: Room, game: Adventure) extends Agent(startingRoom, ga
         case Some(corridor) =>
           if corridor.blocked then
             this.lastQuestion = corridor.riddle
-            corridor.riddle.fold("")(_.question)
+            this.answerToLastQuestion = this.lastQuestion.map(_.answers.head).getOrElse("")
+            corridor.message
           else
             this.moveThrough(corridor) match {
               case Some(room) =>
@@ -90,13 +98,11 @@ class Player(startingRoom: Room, game: Adventure) extends Agent(startingRoom, ga
     var answer = ""
     command match {
       case "showall" =>
-        game.maze.roomsIterator.foreach(_.reveal())
+        game.maze.roomsIterator.foreach( _.reveal() )
       case "unlock" =>
-        this.location.corridors.values.foreach( corridor =>
-          corridor.unlock(corridor.riddle.map(_.answer).getOrElse(""))
-        )
+        this.location.corridors.values.foreach( _.unlock() )
       case "answer" =>
-        answer = "The answer is "
+        answer = "The answer is \"" + answerToLastQuestion + "\""
       case _ =>
     }
     answer

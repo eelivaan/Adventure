@@ -6,7 +6,7 @@ package o1.adventure
 class Adventure:
 
   /** the name of the game */
-  val title = "The Maze"
+  val title = "Adventure"
 
   /** The game world */
   val maze = new Maze()
@@ -16,12 +16,10 @@ class Adventure:
 
   /** All agents in the world including the player */
   val agents: Vector[Agent] = player +: Vector.from(
-    maze.roomsIterator.filter(room => room.spawnBoundEnemy || room.spawnMovingEnemy).map(
-      room => new Slaybot(room, this, room.spawnMovingEnemy)
+    maze.roomsIterator.filter(room => room.spawnBoundEnemy || room.spawnChasingEnemy).map(
+      room => new Slaybot(room, this, huntsPlayer = room.spawnChasingEnemy)
     ) ++ (
-    maze.corridorsIterator.filter(_.spawnGateKeeper).map(
-      corridor => new Gatekeeper(corridor, this)
-    )
+    maze.corridorsIterator.flatMap(_.gatekeeper)
   ))
 
   var gameRunning = true
@@ -40,7 +38,7 @@ class Adventure:
 
   /** Returns a message that is to be displayed to the player at the beginning of the game. */
   def welcomeMessage = "Your mission is to find your way out of this maze.\n" +
-                       "Find clues and items that will help you get through obstacles.\n" +
+                       "Find clues and items that will help you through obstacles.\n" +
                        "\n" +
                        "Type \"go left\" to get started.\n"
 

@@ -14,27 +14,21 @@ object cc:
 
 
 val mazePattern = """
-X-0-! 0-#-0cX
+X-0-0-0-#-0gX
   | | | |   |
-0-0-0 0-A-1 O-O
+0-0 ! 0g0-1 #-O
   b   | |   |
-G-F-E-D-B-CaO
+D-C-B-A-0-0aO
 """
 
-val roomsWithBoundEnemies = Vector('#')
-
-val roomsWithFreeEnemies = Vector('!')
-
 val roomHints = Map[Char, String](
-  'A' -> "what", 'B' -> "is the meaning of", 'C' -> "life and everything",
-                                             'D' -> "1+1", 'E' -> "2^3", 'F' -> "3!",
-  'G' -> "4/5"
+  'A' -> "1+1", 'B' -> "2^3", 'C' -> "3!", 'D' -> "4/5"
 )
 
 val codeLock = "The door seems to be having a code lock.\nWhat might the code be?"
 
-val corridorRiddles = Map[Char, Riddle](
+val corridorBlockings = Map(
   'a' -> Riddle(codeLock, "42"),
   'b' -> Riddle(codeLock, "286"),
-  'c' -> Riddle("What is always coming but never really here?", "tomorrow", withGateKeeper = true),
+  'g' -> Gatekeeper,
 )
