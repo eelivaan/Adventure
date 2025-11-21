@@ -21,11 +21,11 @@ class Player(startingRoom: Room,
 
   val bufferedMoves = Queue[String]()
 
-  private val commandMap = Map("go" -> go, "cheatcode" -> cheat)
+  private val commandMap = Map("go" -> go, "cheatcode" -> cheat, "use" -> useItem)
 
   /**
    * Parse and execute actions based on given user prompt.
-   * Returns
+   * Returns some feedback
    */
   def parseCommand(cmd: String): String =
     val verb = cmd.trim.takeWhile(!_.isWhitespace).toLowerCase
@@ -63,6 +63,13 @@ class Player(startingRoom: Room,
     super.tick(dt)
 
 
+  override def onArrival(room: Room): Unit =
+    super.onArrival(room)
+    if room.items.nonEmpty then
+      room.pickItem("key").foreach( item => this.possessedItems += item)
+  end onArrival
+
+
   /**
    * Go into the next room in specified direction if possible
    */
@@ -71,7 +78,8 @@ class Player(startingRoom: Room,
       bufferedMoves.enqueue(direction)
       ""
     else
-      this.location.corridors.get(Dir.fromString(direction)) match {
+      this.focus = Dir.fromString(direction)
+      this.location.corridors.get(this.focus) match {
         case Some(corridor) =>
           if corridor.blocked then
             this.lastQuestion = corridor.riddle
@@ -92,7 +100,7 @@ class Player(startingRoom: Room,
 
 
   /**
-   * Some cheat codes to help the developer
+   * Some cheat codes
    */
   def cheat(command: String): String =
     var answer = ""
@@ -107,6 +115,31 @@ class Player(startingRoom: Room,
     }
     answer
   end cheat
+
+
+  /**
+   * Use an item to do something
+   */
+  def useItem(itemName: String): String =
+    this.inventory.get(itemName) match {
+      case Some(key: Key) =>
+        this.location.corridors.get(this.focus) match {
+          case Some(corridorToUnlock) =>
+            corridorToUnlock.unlockWithKey(key) match {
+              case Some(failMessage) =>
+                failMessage
+              case None =>
+                // keys can be used only once
+                this.possessedItems -= key
+                ""
+            }
+          case _ =>
+            "What are you trying to unlock?"
+        }
+      case _ =>
+        s"You don't have a $itemName"
+    }
+  end useItem
 
 
 end Player

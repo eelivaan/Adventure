@@ -6,8 +6,15 @@ Useful keys:
 
 
 Available commands:
+
+Movement:
 go left
 go right
 go up
 go down
+
+Restart the game:
 restart
+
+Use a key, if you have one, to unlock a door:
+use key

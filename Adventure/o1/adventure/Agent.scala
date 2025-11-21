@@ -2,12 +2,12 @@ package o1.adventure
 
 import java.awt.Color
 import java.awt.image.BufferedImage
-import scala.collection.mutable.Map
 import javax.imageio.ImageIO
 import java.io.File
 import scala.swing.Graphics2D
 import scala.Console
 import scala.math.{sin, min, max}
+import scala.collection.mutable.Set
 
 def loadSprite(filename: String): Option[BufferedImage] =
   try
@@ -31,20 +31,24 @@ trait Agent(startingRoom: Room):
   private var targetRoom: Option[Room] = None
   private var (tgtX,tgtY) = (0,0)
 
+  /** Direction of focus for opening doors etc. */
+  var focus: Dir = Dir.Invalid
+
   var (cx,cy) = (startingRoom.cx, startingRoom.cy)
   val size = 30
   val speed = 80.0 // pixels per second
   var cheer = false
   private var isAlive = true
+
   def isHostile = false
 
-  private val possessedItems = Map[String, Item]()
+  protected val possessedItems = Set[Item]()
 
   /** Returns the agent’s current location. */
   def location = this.currentRoom
 
   /** Returns the agent's current possessions */
-  def inventory = this.possessedItems
+  def inventory: Map[String, Item] = this.possessedItems.map( item => item.name -> item ).toMap
 
   def isMoving = this.targetRoom.isDefined
 
@@ -80,6 +84,11 @@ trait Agent(startingRoom: Room):
     if this.isMoving then
       setTargetRoom(this.currentRoom)
 
+  /**
+   * Called when the agent arrives in a new room
+   */
+  def onArrival(room: Room): Unit = ()
+
   protected def imageFile: String
   // try to load a fancy image to be this agent's visual representation
   private val sprite = loadSprite(this.imageFile)
@@ -91,6 +100,7 @@ trait Agent(startingRoom: Room):
     if !this.alive then
       splatterSprite.foreach(sprite => g.drawImage(sprite, cx-20,cy-20, 40,40, null))
     else
+      // body
       this.sprite match {
         case Some(value) if alive =>
           val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
@@ -98,6 +108,18 @@ trait Agent(startingRoom: Room):
         case _ =>
           g.setColor(new Color(100,0,0))
           g.fillOval(cx-size/2, cy-size/2, size,size)
+      }
+      // possessions
+      var dx = 0
+      this.possessedItems.foreach( item =>
+        item.render(g, this.cx+dx, this.cy+5)
+        dx += 5
+      )
+      // focus arrow
+      Dir.arrowSprites.get(this.focus).flatten match {
+        case Some(sprite) =>
+          g.drawImage(sprite, cx-30,cy-30, 60,60, null)
+        case None =>
       }
 
   /**
@@ -113,7 +135,10 @@ trait Agent(startingRoom: Room):
       if maxMovement > max(dx.abs, dy.abs) then
         this.cx = this.tgtX
         this.cy = this.tgtY
-        targetRoom.foreach(this.currentRoom = _)
+        targetRoom.foreach( newRoom =>
+          onArrival(newRoom)
+          this.currentRoom = newRoom
+        )
         this.targetRoom = None
       else
         this.cx += dx.sign * min(dx.abs, maxMovement)

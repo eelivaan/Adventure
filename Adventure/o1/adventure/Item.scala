@@ -1,18 +1,38 @@
 package o1.adventure
 
-/** The class `Item` represents items in a text adventure game. Each item has a name
-  * and a longer description. (In later versions of the adventure game, items may
-  * have other features as well.)
-  *
-  * N.B. It is assumed, but not enforced by this class, that items have unique names.
-  * That is, no two items in a game world have the same name.
-  *
-  * @param name         the item’s name
-  * @param description  the item’s description */
-class Item(val name: String, val description: String):
+import scala.swing.Graphics2D
+import java.awt.Color
 
-  /** Returns a short textual representation of the item (its name, that is). */
+/**
+ *  Items are things that agents can carry and use to do something
+ */
+class Item(val name: String):
+
+  def imageFile = ""
+
+  val sprite = loadSprite(this.imageFile)
+
+  val size = 20
+
   override def toString = this.name
+
+  def render(g: Graphics2D, x: Int, y: Int) =
+    this.sprite match {
+      case Some(sprite) =>
+        g.drawImage(sprite, x, y, size, size, null)
+      case None =>
+        g.setColor(new Color(50,50,50))
+        g.fillOval(x, y, size, size)
+    }
 
 end Item
 
+
+class Key extends Item("key"):
+
+  override def imageFile: String = "Adventure/sprites/key.png"
+
+end Key
+
+// needed only for maze definition
+object Key

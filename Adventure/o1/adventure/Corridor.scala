@@ -10,7 +10,7 @@ import scala.swing.Orientation.{Horizontal, Vertical}
 class Corridor(
                 val roomA: Room,
                 val roomB: Room,
-                lockingMethod: Option[Riddle|Gatekeeper.type] = None,
+                lockingMethod: Option[Riddle|Gatekeeper.type|Key.type] = None,
                 private var hidden: Boolean = true
               ):
 
@@ -41,6 +41,7 @@ class Corridor(
 
   var lockingRiddle: Option[Riddle] = None
   var gatekeeper: Option[Gatekeeper] = None
+  var keyNeeded = false
 
   lockingMethod match {
     case Some(riddle: Riddle) =>
@@ -48,12 +49,15 @@ class Corridor(
       this.lockingRiddle = Some(riddle)
     case Some(x: Gatekeeper.type) =>
       this.gatekeeper = Some(new Gatekeeper(this))
-    case None =>
+    case Some(x: Key.type ) =>
+      this.keyNeeded = true
+    case _ =>
   }
 
-  private var isLocked = lockingRiddle.isDefined || gatekeeper.isDefined
+  private var isLocked = lockingRiddle.isDefined || gatekeeper.isDefined || keyNeeded
 
-  private var doorAnimationKey = if this.lockingRiddle.isDefined then 1.0 else 0.0
+  // door is closed if animationKey = 1.0
+  private var doorAnimationKey = if this.lockingRiddle.isDefined || this.keyNeeded then 1.0 else 0.0
   private var doorAnimation = 0.0
 
   /**
@@ -104,7 +108,10 @@ class Corridor(
   def message: String =
     gatekeeper.map(_.message).getOrElse(
       lockingRiddle.map(_.question).getOrElse(
-        "That corridor is blocked!"))
+        if keyNeeded then
+          "That door seems to be locked.\nMaybe you need to use a key?"
+        else
+          "That corridor is blocked!"))
 
   /**
    * Returns the room on the other end of this corridor
@@ -133,7 +140,16 @@ class Corridor(
         ""
     }
 
-  // unblock directly
+  def unlockWithKey(key: Key): Option[String] =
+    if this.keyNeeded && this.isLocked then
+      this.unlock()
+      None
+    else if this.lockingRiddle.isDefined && this.isLocked then
+      Some("What you're doing with a key on a code lock?")
+    else
+      Some("There is no use for a key here.")
+
+  // unlock directly without any conditioning
   def unlock(): Unit =
     this.isLocked = false
     this.doorAnimation = -1 // start door opening animation

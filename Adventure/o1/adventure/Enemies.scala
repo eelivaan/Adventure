@@ -14,7 +14,7 @@ class Slaybot(startingRoom: Room,
     super.tick(dt)
 
     if this.huntsPlayer then
-      // if the player is found on any neigbouring room, start a pursuit
+      // if the player is found on any neighbouring room, start a pursuit
       this.location.corridors.values.find(_.otherRoom(this.location) == game.player.location)
       match {
         case Some(corridor) =>

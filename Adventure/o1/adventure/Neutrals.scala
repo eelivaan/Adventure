@@ -12,11 +12,13 @@ class Gatekeeper(corridor: Corridor) extends Agent(corridor.roomA):
   override protected def imageFile: String = "Adventure/sprites/guardian.png"
 
   private val allRiddles = Vector(
-    // www.solveordie.com and other sources
+    // www.solveordie.com/clean-riddles and other sources
     Riddle("What is always coming but never arrives?", "tomorrow"),
     Riddle("I have 13 hearts but no lungs or stomach. What am I?", "a deck of cards|deck of cards|carddeck"),
-    Riddle("What animal walks on four legs in the morning, two legs during the day, and three legs in the evening?", "human|man"),
+    Riddle("What animal walks on four legs in the morning,\n two legs during the day, and three legs in the evening?", "human|man"),
     Riddle("What is the meaning of life, the universe and everything?", "42"),
+    Riddle("You bury me when I am alive, and dig me up when I die. What am I?", "a plant|plant"),
+    Riddle("The more you take, the more you leave behind? What am I?", "footstep|footsteps")
   )
 
   this.cx = corridor.cx
@@ -28,7 +30,7 @@ class Gatekeeper(corridor: Corridor) extends Agent(corridor.roomA):
     this.cheer = true
     "- Gatekeeper:\n" +
     "\"To get through you need to answer my question correctly:\n\n" +
-    s"${riddle.question}\""
+    s" ${riddle.question}\""
 
   def tryToAnswer(answer: String, playerCurrentRoom: Room): String =
     if riddle.testAnswer(answer) then

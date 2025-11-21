@@ -2,7 +2,7 @@ package o1.adventure
 
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.util.Random
-
+import java.awt.image.BufferedImage
 
 /**
  * Enumeration for all possible directions for the player to move
@@ -20,6 +20,14 @@ enum Dir:
     }
 
 object Dir:
+  val arrowSprites = Map[Dir, Option[BufferedImage]](
+    Dir.Right -> loadSprite("Adventure/sprites/arrow_east.png"),
+    Dir.Up -> loadSprite("Adventure/sprites/arrow_north.png"),
+    Dir.Down -> loadSprite("Adventure/sprites/arrow_south.png"),
+    Dir.Left -> loadSprite("Adventure/sprites/arrow_west.png"),
+    Dir.Invalid -> None
+  )
+
   def fromString(str: String): Dir =
     try
       Dir.valueOf(str.head.toUpper.toString + str.tail.toLowerCase)
@@ -82,11 +90,13 @@ class Maze:
               case ch if !ch.isWhitespace =>
                 val size = rng.between(120,160)
                 val newRoom = new Room(cx,cy, size,size, hidden = true, isFinish = ch=='X')
-                if ch == '1' then  // set as starting room
+                if ch == '*' then  // set as starting room
                   startingRoom = newRoom
                 newRoom.hint = roomHints.getOrElse(ch, "")
                 newRoom.spawnBoundEnemy = (ch == '#')
                 newRoom.spawnChasingEnemy = (ch == '!')
+                if roomsWithKeys.contains(ch) then
+                  newRoom.addItem(new Key())
                 Some(newRoom)
               // no room
               case _ =>
