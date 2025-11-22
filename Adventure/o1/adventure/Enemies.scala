@@ -1,6 +1,7 @@
 package o1.adventure
 
-import scala.math.{sin,cos}
+import scala.math.{sin,cos,random}
+
 
 class Slaybot(startingRoom: Room,
               val game: Adventure,
@@ -9,6 +10,8 @@ class Slaybot(startingRoom: Room,
   override protected def imageFile: String = "Adventure/sprites/slaybot.png"
 
   override def isHostile: Boolean = true
+
+  val offset = random() * 6.28
 
   override def tick(dt: Double): Unit =
     super.tick(dt)
@@ -23,7 +26,7 @@ class Slaybot(startingRoom: Room,
       }
     else
       // roam around the room
-      val t = System.currentTimeMillis() / 1000.0
+      val t = offset + System.currentTimeMillis() / 700.0
       val r = this.location.width / 2 - this.size / 2
       this.cx = this.location.cx + (cos(t) * r).toInt
       this.cy = this.location.cy + (sin(t) * r).toInt

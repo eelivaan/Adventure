@@ -11,7 +11,7 @@ import scala.language.adhocExtensions  // enable extension of swing classes (is 
  */
 class Canvas extends BoxPanel(Orientation.Vertical):
 
-  val hintFont = new Font("Times New Roman", Font.ITALIC, 14)
+  val hintFont = new Font("Consolas", Font.ITALIC, 15)
   var gameRef: Option[Adventure] = None
   var renderOrigin = (100,100)
   var textToHighlight = ""
@@ -58,16 +58,16 @@ class Canvas extends BoxPanel(Orientation.Vertical):
       g.translate(tx,ty)
 
       // render floors and props
-      game.maze.roomsIterator.foreach(_.render(g, 1))
-      game.maze.corridorsIterator.foreach(_.render(g, 1))
+      game.maze.roomsIterator.foreach(_.render(g))
+      game.maze.corridorsIterator.foreach(_.render(g))
 
       // render agents
       for agent <- game.agents do
         agent.render(g)
 
-      // render hiding masks
-      game.maze.roomsIterator.foreach(_.render(g, 2))
-      game.maze.corridorsIterator.foreach(_.render(g, 2))
+      // render hiding covers
+      game.maze.roomsIterator.foreach(_.renderCover(g))
+      game.maze.corridorsIterator.foreach(_.renderCover(g))
 
       g.translate(-tx,-ty)
 

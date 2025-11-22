@@ -5,7 +5,6 @@ package o1.adventure
  */
 class Adventure:
 
-  /** the name of the game */
   val title = "Adventure"
 
   /** The game world */
@@ -19,13 +18,14 @@ class Adventure:
     maze.roomsIterator.filter(room => room.spawnBoundEnemy || room.spawnChasingEnemy).map(
       room => new Slaybot(room, this, huntsPlayer = room.spawnChasingEnemy)
     ) ++ (
-    maze.corridorsIterator.flatMap(_.gatekeeper)
-  ))
+      maze.corridorsIterator.flatMap(_.gatekeeper)
+    ))
 
   var gameRunning = true
 
   def tick(dt: Double) =
     agents.filter(_.alive).foreach(_.tick(dt))
+    maze.roomsIterator.foreach(    _.tick(dt))
     maze.corridorsIterator.foreach(_.tick(dt))
   end tick
 

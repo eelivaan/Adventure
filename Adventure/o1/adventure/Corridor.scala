@@ -37,7 +37,7 @@ class Corridor(
 
   // width of the corridor (in x or y direction depending on orientation)
   val width = 50
-  val length = (if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh) + 10  // small offset to account for antialiasing
+  val length = (if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh) + 6  // small offset to account for antialiasing
 
   var lockingRiddle: Option[Riddle] = None
   var gatekeeper: Option[Gatekeeper] = None
@@ -60,30 +60,33 @@ class Corridor(
   private var doorAnimationKey = if this.lockingRiddle.isDefined || this.keyNeeded then 1.0 else 0.0
   private var doorAnimation = 0.0
 
+  var coverAlpha = if this.hidden then 1.0 else 0.0
+
   /**
    * Render this corridor into given graphics context
    */
-  def render(g: Graphics2D, pass: Int) =
-    var w = if orientation == Horizontal then this.length else this.width
-    var h = if orientation == Horizontal then this.width else this.length
+  def render(g: Graphics2D) =
+    val w = if orientation == Horizontal then this.length else this.width
+    val h = if orientation == Horizontal then this.width else this.length
 
-    if pass == 1 then
-      g.setColor(cc.floorColor)
-      g.fillRect(cx-w/2, cy-h/2, w,h)
+    g.setColor(cc.floorColor)
+    g.fillRect(cx-w/2, cy-h/2, w,h)
 
-      if doorAnimationKey > 0.0 then
-        g.setColor(cc.doorColor)
-        if orientation == Horizontal then
-          g.fillRect(cx-10, cy-h/2, 20,(h * doorAnimationKey).toInt)
-        else
-          g.fillRect(cx-w/2, cy-10, (w * doorAnimationKey).toInt,20)
-
-    else if pass == 2 && this.hidden then
-      // draw a bit larger rectangle to cover
-      w += 5; h += 5
-      g.setColor(cc.backgroundColor)
-      g.fillRect(cx-w/2, cy-h/2, w,h)
+    if doorAnimationKey > 0.0 then
+      g.setColor(cc.doorColor)
+      if orientation == Horizontal then
+        g.fillRect(cx-10, cy-h/2, 20,(h * doorAnimationKey).toInt)
+      else
+        g.fillRect(cx-w/2, cy-10, (w * doorAnimationKey).toInt,20)
   end render
+
+  def renderCover(g: Graphics2D) =
+    if this.coverAlpha > 0.0 then
+      val w = if orientation == Horizontal then this.length-10 else this.width+5
+      val h = if orientation == Horizontal then this.width+5 else this.length-10
+      g.setColor(cc.withAlpha(cc.backgroundColor, this.coverAlpha))
+      g.fillRect(cx-w/2, cy-h/2, w,h)
+  end renderCover
 
 
   def tick(dt: Double) =

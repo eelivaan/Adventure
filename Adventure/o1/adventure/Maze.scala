@@ -95,7 +95,7 @@ class Maze:
                 newRoom.hint = roomHints.getOrElse(ch, "")
                 newRoom.spawnBoundEnemy = (ch == '#')
                 newRoom.spawnChasingEnemy = (ch == '!')
-                if roomsWithKeys.contains(ch) then
+                if ch == '$' then
                   newRoom.addItem(new Key())
                 Some(newRoom)
               // no room

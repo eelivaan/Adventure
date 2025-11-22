@@ -13,12 +13,12 @@ class Gatekeeper(corridor: Corridor) extends Agent(corridor.roomA):
 
   private val allRiddles = Vector(
     // www.solveordie.com/clean-riddles and other sources
-    Riddle("What is always coming but never arrives?", "tomorrow"),
-    Riddle("I have 13 hearts but no lungs or stomach. What am I?", "a deck of cards|deck of cards|carddeck"),
+    Riddle("It is always coming but it never arrives.\n What is it?", "tomorrow"),
+    Riddle("It has 13 hearts but no lungs or stomach.\n What is it?", "a deck of cards|deck of cards|carddeck"),
     Riddle("What animal walks on four legs in the morning,\n two legs during the day, and three legs in the evening?", "human|man"),
     Riddle("What is the meaning of life, the universe and everything?", "42"),
-    Riddle("You bury me when I am alive, and dig me up when I die. What am I?", "a plant|plant"),
-    Riddle("The more you take, the more you leave behind? What am I?", "footstep|footsteps")
+    Riddle("You bury me when I am alive, and dig me up when I die.\n What am I?", "a plant|plant"),
+    Riddle("The more you take, the more you leave behind.\n What is it?", "footstep|footsteps")
   )
 
   this.cx = corridor.cx
@@ -29,7 +29,7 @@ class Gatekeeper(corridor: Corridor) extends Agent(corridor.roomA):
   def message =
     this.cheer = true
     "- Gatekeeper:\n" +
-    "\"To get through you need to answer my question correctly:\n\n" +
+    "\"To get through you need to solve this riddle of mine:\n\n" +
     s" ${riddle.question}\""
 
   def tryToAnswer(answer: String, playerCurrentRoom: Room): String =

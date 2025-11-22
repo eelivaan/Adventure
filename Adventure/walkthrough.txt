@@ -1,6 +1,13 @@
 
-Cheat codes
+Sekä maaliruutuja että mahdollisia reittejä niihin on useita mutta tässä esimerkki:
 
-Show all rooms:
+Jos on oikein löysä olo, voit käyttää näitä huijauskoodeja:
 
-Open surrounding corridors:
+Paljasta kaikki huoneet:
+cheatcode showall
+
+Avaa huoneen lukitut ovet:
+cheatcode unlock
+
+Paljasta vastaus arvoitukseen/kysymykseen:
+cheatcode answer

@@ -1,5 +1,6 @@
 package o1.adventure
 
+import java.awt.Color
 import scala.collection.mutable.Map
 import scala.swing.Graphics2D
 import scala.util.Random
@@ -36,47 +37,63 @@ class Room(
   var spawnBoundEnemy = false
   var spawnChasingEnemy = false
 
-  /*val decorations = Array.fill(10)(
-    (this.cx + rng.between(-width/2,width/2), this.cy + rng.between(-height/2,height/2))
-  )*/
+  private val decorations = Array.fill(10)(
+    (this.cx + rng.between(-width/2,width/2-20),
+     this.cy + rng.between(-height/2,height/2-20),
+     rng.between(9,20))
+  )
+
+  private var coverAlpha = if hidden then 1.0 else 0.0
 
   /**
    * Render this room into given graphics context
    */
-  def render(g: Graphics2D, pass: Int) =
-    if pass == 1 then
-      g.setColor(if this.isFinish then cc.finishColor else cc.floorColor)
-      g.fillRoundRect(cx-width/2, cy-height/2, width,height, 20,20)
+  def render(g: Graphics2D) =
+    g.setColor(if this.isFinish then cc.finishColor else cc.floorColor)
+    g.fillRoundRect(cx-width/2, cy-height/2, width,height, 20,20)
 
-      //g.setColor(cc.decorColor)
-      //g.fillOval()
+    g.setColor(cc.decorColor)
+    for (x,y,size) <- this.decorations do
+      g.fillOval(x, y, size,size)
 
-      items.values.foreach( item => item.render(g, this.cx, this.cy) )
+    items.values.foreach( item => item.render(g, this.cx, this.cy) )
 
-      if this.hint.nonEmpty then
-        g.setColor(cc.hintColor)
-        g.drawString(this.hint, (cx-width/2.2).toInt, (cy+height/2.5).toInt)
-
-    else if pass == 2 && this.hidden then
-      // draw a bit larger rectangle to cover
-      val (width,height) = (this.width+5, this.height+5)
-      g.setColor(cc.backgroundColor)
-      g.fillRect(cx-width/2, cy-height/2, width,height)
+    if this.hint.nonEmpty then
+      g.setColor(cc.hintColor)
+      g.drawString(this.hint, (cx-width/2.2).toInt, (cy+height/2.5).toInt)
   end render
+
+  def renderCover(g: Graphics2D) =
+    if this.coverAlpha > 0.0 then
+      // draw a bit larger rectangle to cover
+      val (width,height) = (this.width+6, this.height+6)
+      g.setColor(cc.withAlpha(cc.backgroundColor, this.coverAlpha))
+      g.fillRect(cx-width/2, cy-height/2, width,height)
+  end renderCover
+
+  def tick(dt: Double) =
+    if !this.hidden && this.coverAlpha > 0.0 then
+      // fade out the covering
+      this.coverAlpha -= 0.5 * dt
+      this.corridors.values.foreach(corridor => corridor.coverAlpha = corridor.coverAlpha.min(this.coverAlpha))
+  end tick
+
 
   /**
    * Reveal this (yet hidden) room to the player.
    * Also reveals any connected corridors.
    */
   def reveal(): Unit =
-    this.hidden = false
-    this.corridors.values.foreach( corridor =>
-      corridor.reveal()
-      // rooms with circling enemies need to be shown earlier
-      val otherRoom = corridor.otherRoom(this)
-      if otherRoom.spawnBoundEnemy then
-        otherRoom.reveal()
-    )
+    if this.hidden then
+      this.hidden = false
+      this.corridors.values.foreach( corridor =>
+        corridor.reveal()
+        // rooms with circling enemies need to be shown earlier
+        val otherRoom = corridor.otherRoom(this)
+        if otherRoom.spawnBoundEnemy then
+          otherRoom.reveal()
+      )
+  end reveal
 
 end Room
 

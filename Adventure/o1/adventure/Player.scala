@@ -1,5 +1,7 @@
 package o1.adventure
 
+import o1.adventure.ui.AdventureGUI
+
 import scala.collection.mutable.Queue
 
 /** A `Player` object represents a player character controlled by the real-life user
@@ -53,13 +55,13 @@ class Player(startingRoom: Room,
 
     // invalid command
     else
-      s"Invalid command \"$cmd\""
+      s"Unknown command \"$cmd\""
   end parseCommand
 
 
   override def tick(dt: Double): Unit =
     if bufferedMoves.nonEmpty && !this.isMoving then
-      go(bufferedMoves.dequeue())
+      AdventureGUI.showMessage(go(bufferedMoves.dequeue()))
     super.tick(dt)
 
 
