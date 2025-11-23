@@ -7,7 +7,8 @@ import javax.swing.{Timer, UIManager}
 import java.awt.{Dimension, Font}
 import scala.collection.mutable.{ArrayBuffer, Queue}
 import scala.io.Source
-import scala.language.adhocExtensions
+import scala.language.adhocExtensions   // enable extension of swing classes
+
 import o1.adventure.Adventure
 
 
@@ -47,18 +48,17 @@ object AdventureGUI extends SimpleSwingApplication:
     caret.color = new Color(200,200,200)
     font = niceFont
 
-  val helpBtn = new Button("Help"):
-    //background = new Color(0,0,0)
-    //foreground = fgcolor
+  val helpButton = new Button("Help"):
     contentAreaFilled = true
     focusable = false
     reactions += { case e: ButtonClicked => showHelp() }
 
   val canvas = new Canvas():
     contents += textDispaly
-    contents += new FlowPanel(inputField, helpBtn)
+    contents += new FlowPanel(inputField, helpButton)
     border = new EmptyBorder(10,10,10,10)
     gameRef = Some(game)
+
 
   // main window definition
   def top = new MainFrame:
@@ -111,7 +111,7 @@ object AdventureGUI extends SimpleSwingApplication:
 
   // timer for ticking 30 times per second
   val tickTimer = new Timer(33, Swing.ActionListener { _ => this.onTick() })
-  var prevTimeStamp = System.currentTimeMillis()
+  var prevFrameTime = System.currentTimeMillis()
   tickTimer.start()
 
   showMessage(game.welcomeMessage)
@@ -129,15 +129,18 @@ object AdventureGUI extends SimpleSwingApplication:
     val curTime = System.currentTimeMillis()
 
     if game.gameRunning then
-      val deltaTime = (curTime - prevTimeStamp) / 1000.0
+      val deltaTime = (curTime - prevFrameTime) / 1000.0
       game.tick(deltaTime)
       canvas.keepPlayerOnScreen(deltaTime)
 
       if game.isComplete then
+        // game is won
         showMessage(game.victoryMessage)
         game.gameRunning = false
         game.player.cheer = true
+        game.completionTime = curTime
       else if game.isOver then
+        // game is lost
         showMessage(game.gameOverMessage)
         game.gameRunning = false
         inputField.text = "restart"
@@ -149,11 +152,11 @@ object AdventureGUI extends SimpleSwingApplication:
     canvas.textToHighlight = textDispaly.text
     canvas.repaint()
 
-    prevTimeStamp = curTime
+    prevFrameTime = curTime
   end onTick
 
 
-  def submitCommand(command: String) =
+  private def submitCommand(command: String) =
     commandHistory.filterInPlace(_ != command)
     commandHistory += command
     val response = game.player.parseCommand(command)
@@ -172,7 +175,6 @@ object AdventureGUI extends SimpleSwingApplication:
       visible = true
       title = "Help"
       minimumSize = new Dimension(300,300)
-
       contents = new ScrollPane():
         contents = new TextArea("(C) 2025 Elias Vesanen\n\n"):
           background = bgcolor

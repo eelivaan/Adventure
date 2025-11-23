@@ -1,12 +1,11 @@
 package o1.adventure
 
-import java.awt.Color
 import scala.collection.mutable.Map
 import scala.swing.Graphics2D
 import scala.util.Random
 
 /**
- * A Room is a basic building block of the game world.
+ * A Room is the basic building block of the game world.
  * It has 1 to 4 references to Corridors that lead to other rooms.
  * Rooms are initially hidden and only revealed as the player progresses.
  */
@@ -37,11 +36,11 @@ class Room(
   var spawnBoundEnemy = false
   var spawnChasingEnemy = false
 
-  private val decorations = Array.fill(10)(
+  /*private val decorations = Array.fill(10)(
     (this.cx + rng.between(-width/2,width/2-20),
      this.cy + rng.between(-height/2,height/2-20),
      rng.between(9,20))
-  )
+  )*/
 
   private var coverAlpha = if hidden then 1.0 else 0.0
 
@@ -52,9 +51,9 @@ class Room(
     g.setColor(if this.isFinish then cc.finishColor else cc.floorColor)
     g.fillRoundRect(cx-width/2, cy-height/2, width,height, 20,20)
 
-    g.setColor(cc.decorColor)
-    for (x,y,size) <- this.decorations do
-      g.fillOval(x, y, size,size)
+    //g.setColor(cc.decorColor)
+    //for (x,y,size) <- this.decorations do
+    //  g.fillOval(x, y, size,size)
 
     items.values.foreach( item => item.render(g, this.cx, this.cy) )
 
@@ -63,18 +62,21 @@ class Room(
       g.drawString(this.hint, (cx-width/2.2).toInt, (cy+height/2.5).toInt)
   end render
 
+
+  /** Draw black rectangle on top to hide the room */
   def renderCover(g: Graphics2D) =
     if this.coverAlpha > 0.0 then
-      // draw a bit larger rectangle to cover
       val (width,height) = (this.width+6, this.height+6)
       g.setColor(cc.withAlpha(cc.backgroundColor, this.coverAlpha))
       g.fillRect(cx-width/2, cy-height/2, width,height)
   end renderCover
 
+
+  /** Advance animations */
   def tick(dt: Double) =
     if !this.hidden && this.coverAlpha > 0.0 then
       // fade out the covering
-      this.coverAlpha -= 0.5 * dt
+      this.coverAlpha -= 0.6 * dt
       this.corridors.values.foreach(corridor => corridor.coverAlpha = corridor.coverAlpha.min(this.coverAlpha))
   end tick
 

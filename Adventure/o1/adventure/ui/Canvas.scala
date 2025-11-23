@@ -4,7 +4,7 @@ import o1.adventure.Adventure
 
 import java.awt.{RenderingHints, Font}
 import scala.swing.*
-import scala.language.adhocExtensions  // enable extension of swing classes (is off by default?)
+import scala.language.adhocExtensions  // enable extension of swing classes
 
 /**
  * Canvas does the drawing of all 2D graphics.
@@ -17,7 +17,7 @@ class Canvas extends BoxPanel(Orientation.Vertical):
   var textToHighlight = ""
 
   /**
-   * Move render origin so that player is right in the center of the screen
+   * Set render origin so that player is right in the center of the screen
    */
   def centerPlayerOnScreen() =
     gameRef.foreach( game =>
@@ -43,6 +43,7 @@ class Canvas extends BoxPanel(Orientation.Vertical):
                            (oy + dy.sign * game.player.speed * dt).toInt)
     )
 
+
   // paintComponent will be called when GUI needs to be drawn or repaint() is called explicitly
   override def paintComponent(g: Graphics2D): Unit =
     super.paintComponent(g)
@@ -53,12 +54,12 @@ class Canvas extends BoxPanel(Orientation.Vertical):
 
     // draw the maze and stuff
     gameRef.foreach( game =>
-      g.setFont(hintFont)
       val (tx,ty) = this.renderOrigin
       g.translate(tx,ty)
+      g.setFont(hintFont)
 
       // render floors and props
-      game.maze.roomsIterator.foreach(_.render(g))
+      game.maze.roomsIterator.foreach(    _.render(g))
       game.maze.corridorsIterator.foreach(_.render(g))
 
       // render agents
@@ -66,8 +67,15 @@ class Canvas extends BoxPanel(Orientation.Vertical):
         agent.render(g)
 
       // render hiding covers
-      game.maze.roomsIterator.foreach(_.renderCover(g))
+      game.maze.roomsIterator.foreach(    _.renderCover(g))
       game.maze.corridorsIterator.foreach(_.renderCover(g))
+
+      if game.isComplete then
+        // sky
+        val alpha = ((System.currentTimeMillis() - game.completionTime) / 5000.0).min(1.0)
+        g.setColor(new Color(50,130,255, (alpha*255).toInt))
+        g.fillRect(-tx,-ty, this.size.width,this.size.height)
+        game.player.render(g)
 
       g.translate(-tx,-ty)
 

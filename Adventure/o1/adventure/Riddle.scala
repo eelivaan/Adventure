@@ -13,3 +13,8 @@ class Riddle(
   def testAnswer(answer: String) =
     this.answers.contains(answer.toLowerCase)
 end Riddle
+
+
+class CodeLock(code: String)
+  extends Riddle("That door seems to be locked with a code.\nWhat might the code be?", code):
+end CodeLock

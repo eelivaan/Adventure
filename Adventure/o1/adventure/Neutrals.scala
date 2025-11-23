@@ -4,7 +4,7 @@ import scala.util.Random
 
 /**
  * Gatekeepers guard one corridor each and ask player to solve riddles to pass through that corridor.
- * If player fails to answer the Gatekeeper blocks more corridors.
+ * If player fails to answer the Gatekeeper blocks more corridors as a punishment.
  * Gatekeepers choose their riddles from a collection by random.
  */
 class Gatekeeper(corridor: Corridor) extends Agent(corridor.roomA):
@@ -39,7 +39,7 @@ class Gatekeeper(corridor: Corridor) extends Agent(corridor.roomA):
       "Correct. You may go."
     else
       // as a punishment, block one of the other corridors in player's current room
-      val otherCorridors = playerCurrentRoom.corridors.values.filter(_ != this.corridor).toVector
+      val otherCorridors = playerCurrentRoom.corridors.values.filter(corridor => corridor != this.corridor && !corridor.blocked).toVector
       Random.shuffle(otherCorridors).headOption.foreach( _.lock() )
       "Wrong answer."
 

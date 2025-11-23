@@ -33,6 +33,8 @@ class Adventure:
   /** Determines if the adventure is complete, that is, if the player has won. */
   def isComplete = player.location.isFinish
 
+  var completionTime = -1L
+
   /** Determines whether the player lost thereby ending the game. */
   def isOver = !player.alive
 

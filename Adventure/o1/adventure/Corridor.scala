@@ -14,7 +14,7 @@ class Corridor(
                 private var hidden: Boolean = true
               ):
 
-  // the corridor automatically fits itself between the rooms
+  // fit this corridor between the rooms
   val dx = roomB.cx - roomA.cx
   val dy = roomB.cy - roomA.cy
   val orientation =
@@ -49,7 +49,7 @@ class Corridor(
       this.lockingRiddle = Some(riddle)
     case Some(x: Gatekeeper.type) =>
       this.gatekeeper = Some(new Gatekeeper(this))
-    case Some(x: Key.type ) =>
+    case Some(x: Key.type) =>
       this.keyNeeded = true
     case _ =>
   }
@@ -61,6 +61,9 @@ class Corridor(
   private var doorAnimation = 0.0
 
   var coverAlpha = if this.hidden then 1.0 else 0.0
+
+  val lockSprite = loadSprite("Adventure/sprites/lock.png")
+  val questionSprite = loadSprite("Adventure/sprites/question.png")
 
   /**
    * Render this corridor into given graphics context
@@ -75,11 +78,19 @@ class Corridor(
     if doorAnimationKey > 0.0 then
       g.setColor(cc.doorColor)
       if orientation == Horizontal then
-        g.fillRect(cx-10, cy-h/2, 20,(h * doorAnimationKey).toInt)
+        g.fillRect(cx-15, cy-h/2, 30,(h * doorAnimationKey).toInt)
       else
-        g.fillRect(cx-w/2, cy-10, (w * doorAnimationKey).toInt,20)
+        g.fillRect(cx-w/2, cy-15, (w * doorAnimationKey).toInt,30)
+
+    if this.isLocked then
+      if this.keyNeeded then
+        lockSprite.foreach( g.drawImage(_, cx-10,cy-10, 20,20, null) )
+      else if this.lockingRiddle.isDefined then
+        questionSprite.foreach( g.drawImage(_, cx-10,cy-10, 20,20, null) )
   end render
 
+
+  /** Draw black rectangle on top to hide the corridor */
   def renderCover(g: Graphics2D) =
     if this.coverAlpha > 0.0 then
       val w = if orientation == Horizontal then this.length-10 else this.width+5
@@ -92,6 +103,7 @@ class Corridor(
   def tick(dt: Double) =
     // door opening animation
     this.doorAnimationKey = (doorAnimationKey + doorAnimation.sign * 0.4 * dt).min(1.0).max(0.0)
+  end tick
 
 
   /** Whether this corridor is passable or not */
@@ -112,7 +124,7 @@ class Corridor(
     gatekeeper.map(_.message).getOrElse(
       lockingRiddle.map(_.question).getOrElse(
         if keyNeeded then
-          "That door seems to be locked.\nMaybe you need to use a key?"
+          "That door seems to be locked.\nYou could try using a key."
         else
           "That corridor is blocked!"))
 
@@ -129,7 +141,7 @@ class Corridor(
     this.hidden = false
 
   /**
-   * Try to unlock the passage should it be blocked.
+   * Try to unlock the corridor should it be blocked.
    */
   def unlock(answer: String): String =
     this.lockingRiddle match {

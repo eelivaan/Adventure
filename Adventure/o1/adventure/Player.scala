@@ -4,13 +4,10 @@ import o1.adventure.ui.AdventureGUI
 
 import scala.collection.mutable.Queue
 
-/** A `Player` object represents a player character controlled by the real-life user
-  * of the program.
-  * A player object’s state is mutable: the player’s location and possessions can change,
-  * for instance.
-  */
-class Player(startingRoom: Room,
-             val game: Adventure) extends Agent(startingRoom):
+/**
+ * A `Player` object represents a player character controlled by the real-life user of the program.
+ */
+class Player(startingRoom: Room, val game: Adventure) extends Agent(startingRoom):
 
   override protected def imageFile: String = "Adventure/sprites/bat.png"
 
@@ -67,6 +64,7 @@ class Player(startingRoom: Room,
 
   override def onArrival(room: Room): Unit =
     super.onArrival(room)
+    // pick the key if one is found
     if room.items.nonEmpty then
       room.pickItem("key").foreach( item => this.possessedItems += item)
   end onArrival
@@ -142,7 +140,6 @@ class Player(startingRoom: Room,
         s"You don't have a $itemName"
     }
   end useItem
-
 
 end Player
 

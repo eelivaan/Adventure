@@ -1,24 +1,10 @@
 package o1.adventure
 
-import java.awt.Color
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
-import java.io.File
 import scala.swing.Graphics2D
-import scala.Console
 import scala.math.{sin, min, max}
 import scala.collection.mutable.Set
 
-def loadSprite(filename: String): Option[BufferedImage] =
-  try
-    Some(ImageIO.read(new File(filename)))
-  catch
-    case _ =>
-      Console.err.println(s"""Error reading image file "$filename"""")
-      None
-
 val splatterSprite = loadSprite("Adventure/sprites/splatter.png")
-
 
 /**
  * Agents are entitites controlled by either a player or an AI.
@@ -27,22 +13,19 @@ val splatterSprite = loadSprite("Adventure/sprites/splatter.png")
 trait Agent(startingRoom: Room):
 
   private var currentRoom = startingRoom
-  // the room that we are moving to
+  /** the room that we are moving to */
   private var targetRoom: Option[Room] = None
   private var (tgtX,tgtY) = (0,0)
-
   /** Direction of focus for opening doors etc. */
   var focus: Dir = Dir.Invalid
-
   var (cx,cy) = (startingRoom.cx, startingRoom.cy)
   val size = 30
   val speed = 80.0 // pixels per second
   var cheer = false
   private var isAlive = true
+  protected val possessedItems = Set[Item]()
 
   def isHostile = false
-
-  protected val possessedItems = Set[Item]()
 
   /** Returns the agent’s current location. */
   def location = this.currentRoom
@@ -77,16 +60,12 @@ trait Agent(startingRoom: Room):
     this.tgtY = room.cy
     this.targetRoom
 
-  /**
-   * Invert any active movement
-   */
+  /** Invert any active movement */
   def retreat(): Unit =
     if this.isMoving then
       setTargetRoom(this.currentRoom)
 
-  /**
-   * Called when the agent arrives in a new room
-   */
+  /** Called when the agent arrives in a new room */
   def onArrival(room: Room): Unit = ()
 
   protected def imageFile: String
@@ -106,7 +85,7 @@ trait Agent(startingRoom: Room):
           val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
           g.drawImage(value, cx-size/2, cy-size/2+dy.toInt, size,size, null)
         case _ =>
-          g.setColor(new Color(100,0,0))
+          g.setColor(cc.default)
           g.fillOval(cx-size/2, cy-size/2, size,size)
       }
       // possessions
@@ -144,7 +123,6 @@ trait Agent(startingRoom: Room):
         this.cx += dx.sign * min(dx.abs, maxMovement)
         this.cy += dy.sign * min(dy.abs, maxMovement)
   end tick
-
 
 end Agent
 
