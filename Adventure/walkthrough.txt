@@ -1,13 +1,37 @@
 
-Sekä maaliruutuja että mahdollisia reittejä niihin on useita mutta tässä esimerkki:
+Sekä maalihuoneita että mahdollisia reittejä niihin on useita, mutta tässä esimerkki:
 
-Jos on oikein löysä olo, voit käyttää näitä huijauskoodeja:
+[ ] < [ ]               [4]
+ v     ^                ^ v
+[2]   [ ] < [1]         [ ]
+ v                      ^ v
+[ ] > [3]               [ ]   [7]
+       v                ^ v    ^
+      [ ] > [ ] > [ ] > [5] > [6]
+
+1 = lähtöruutu
+2 = saat ensimmäisen avaimen
+3 = käytä ensimmäistä avainta (alaspäin vievään oveen)
+4 = saat toisen avaimen
+5 = koodi 11121214 avaa oven
+6 = käytä toista avainta
+7 = maali!
+
+Ympyrää kiertävät viholliset voi väistää oikealla ajoituksella.
+Takaa-ajavat viholliset voi eksyttää pakenemalla yli kahden huoneen etäisyydelle niistä.
+Lukkojen koodit selviävät kun vihjeet hoksaa ja käy läpi oikeassa järjestyksessä.
+Avaimet katoavat käytettäessä ihan tarkoituksella, niitä vaan pitää etsiä tarpeeksi monta.
+
+Jos on oikein löysä olo, voit myös käyttää näitä huijauskomentoja:
 
 Paljasta kaikki huoneet:
 cheatcode showall
 
-Avaa huoneen lukitut ovet:
+Avaa huoneen kaikki lukitut ovet:
 cheatcode unlock
 
-Paljasta vastaus arvoitukseen/kysymykseen:
+Paljasta vastaus viimeisimpään arvoitukseen/kysymykseen:
 cheatcode answer
+
+Poista viholliset:
+cheatcode killenemies

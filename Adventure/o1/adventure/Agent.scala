@@ -4,7 +4,6 @@ import scala.swing.Graphics2D
 import scala.math.{sin, min, max}
 import scala.collection.mutable.Set
 
-val splatterSprite = loadSprite("Adventure/sprites/splatter.png")
 
 /**
  * Agents are entitites controlled by either a player or an AI.
@@ -65,7 +64,9 @@ trait Agent(startingRoom: Room):
     if this.isMoving then
       setTargetRoom(this.currentRoom)
 
-  /** Called when the agent arrives in a new room */
+  /**
+   * Called when the agent arrives in a new room
+   */
   def onArrival(room: Room): Unit = ()
 
   protected def imageFile: String
@@ -76,30 +77,29 @@ trait Agent(startingRoom: Room):
    * Render this agent into given graphics context
    */
   def render(g: Graphics2D): Unit =
-    if !this.alive then
-      splatterSprite.foreach(sprite => g.drawImage(sprite, cx-20,cy-20, 40,40, null))
-    else
-      // body
-      this.sprite match {
-        case Some(value) if alive =>
-          val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
-          g.drawImage(value, cx-size/2, cy-size/2+dy.toInt, size,size, null)
-        case _ =>
-          g.setColor(cc.default)
-          g.fillOval(cx-size/2, cy-size/2, size,size)
-      }
-      // possessions
-      var dx = 0
-      this.possessedItems.foreach( item =>
-        item.render(g, this.cx+dx, this.cy+5)
-        dx += 5
-      )
-      // focus arrow
+    // body
+    this.sprite match {
+      case Some(value) if alive =>
+        val dy = if cheer then sin(System.currentTimeMillis() / 80.0) * 5 else 0
+        g.drawImage(value, cx-size/2, cy-size/2+dy.toInt, size,size, null)
+      case _ =>
+        g.setColor(cc.default)
+        g.fillOval(cx-size/2, cy-size/2, size,size)
+    }
+    // possessions
+    var dx = 0
+    this.possessedItems.foreach( item =>
+      item.render(g, this.cx+dx, this.cy+5)
+      dx += 5
+    )
+    // focus arrow
+    if !this.cheer then
       Dir.arrowSprites.get(this.focus).flatten match {
         case Some(sprite) =>
           g.drawImage(sprite, cx-30,cy-30, 60,60, null)
         case None =>
       }
+  end render
 
   /**
    * Update coordinates etc. as time passes.
@@ -125,4 +125,3 @@ trait Agent(startingRoom: Room):
   end tick
 
 end Agent
-

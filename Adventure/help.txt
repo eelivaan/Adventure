@@ -4,7 +4,7 @@ Useful keys:
 [Arrow Up]    Scroll through previous commands
 [Arrow Down]  Scroll through previous commands
 [Esc]         Exit application
-[Ctrl]        Retreat quickly
+[Ctrl]        Retreat quickly (reverse ongoing movement)
 
 
 Available commands:
@@ -18,6 +18,8 @@ go down
 Restart the game:
 restart
 
-Use a key, if you have found one,
-to unlock a door:
+Use a key, if you have found one, to unlock a door:
 use key
+
+Additionally, when there's some sort of question on screen,
+you just type your answer to it (just one noun or a code).

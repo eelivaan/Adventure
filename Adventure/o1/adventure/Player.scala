@@ -1,9 +1,5 @@
 package o1.adventure
 
-import o1.adventure.ui.AdventureGUI
-
-import scala.collection.mutable.Queue
-
 /**
  * A `Player` object represents a player character controlled by the real-life user of the program.
  */
@@ -15,16 +11,15 @@ class Player(startingRoom: Room, val game: Adventure) extends Agent(startingRoom
 
   /** The question i.e. riddle that was last presented */
   private var lastQuestion: Option[Riddle] = None
+
   // only needed for cheating
   private var answerToLastQuestion = ""
-
-  val bufferedMoves = Queue[String]()
 
   private val commandMap = Map("go" -> go, "cheatcode" -> cheat, "use" -> useItem)
 
   /**
    * Parse and execute actions based on given user prompt.
-   * Returns some feedback
+   * Returns some feedback for the user.
    */
   def parseCommand(cmd: String): String =
     val verb = cmd.trim.takeWhile(!_.isWhitespace).toLowerCase
@@ -56,12 +51,6 @@ class Player(startingRoom: Room, val game: Adventure) extends Agent(startingRoom
   end parseCommand
 
 
-  override def tick(dt: Double): Unit =
-    if bufferedMoves.nonEmpty && !this.isMoving then
-      AdventureGUI.showMessage(go(bufferedMoves.dequeue()))
-    super.tick(dt)
-
-
   override def onArrival(room: Room): Unit =
     super.onArrival(room)
     // pick the key if one is found
@@ -74,28 +63,24 @@ class Player(startingRoom: Room, val game: Adventure) extends Agent(startingRoom
    * Go into the next room in specified direction if possible
    */
   def go(direction: String): String =
-    if this.isMoving then
-      bufferedMoves.enqueue(direction)
-      ""
-    else
-      this.focus = Dir.fromString(direction)
-      this.location.corridors.get(this.focus) match {
-        case Some(corridor) =>
-          if corridor.blocked then
-            this.lastQuestion = corridor.riddle
-            this.answerToLastQuestion = this.lastQuestion.map(_.answers.head).getOrElse("")
-            corridor.message
-          else
-            this.moveThrough(corridor) match {
-              case Some(room) =>
-                room.reveal()
-                ""
-              case None =>
-                "That corridor is blocked!"
-            }
-        case None =>
-          s"You can't go $direction"
-      }
+    this.focus = Dir.fromString(direction)
+    this.location.corridors.get(this.focus) match {
+      case Some(corridor) =>
+        if corridor.blocked then
+          this.lastQuestion = corridor.riddle
+          this.answerToLastQuestion = this.lastQuestion.map(_.answers.head).getOrElse("")
+          corridor.message
+        else
+          this.moveThrough(corridor) match {
+            case Some(room) =>
+              room.reveal()
+              ""
+            case None =>
+              "That corridor is blocked!"
+          }
+      case None =>
+        s"You can't go $direction"
+    }
   end go
 
 
@@ -111,6 +96,8 @@ class Player(startingRoom: Room, val game: Adventure) extends Agent(startingRoom
         this.location.corridors.values.foreach( _.unlock() )
       case "answer" =>
         answer = "The answer is \"" + answerToLastQuestion + "\""
+      case "killenemies" =>
+        game.agents.filter(_.isHostile).foreach( _.kill() )
       case _ =>
     }
     answer
@@ -136,6 +123,7 @@ class Player(startingRoom: Room, val game: Adventure) extends Agent(startingRoom
           case _ =>
             "What are you trying to unlock?"
         }
+
       case _ =>
         s"You don't have a $itemName"
     }

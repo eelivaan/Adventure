@@ -1,7 +1,8 @@
 package o1.adventure
 
 /**
- * This class represents riddles or puzzles for the player to solve
+ * This class represents riddles or puzzles for the player to solve.
+ * Alternative answers can be defined by separating them with '|'
  */
 class Riddle(
               val question: String,

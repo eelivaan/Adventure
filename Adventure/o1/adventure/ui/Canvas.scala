@@ -1,6 +1,6 @@
 package o1.adventure.ui
 
-import o1.adventure.Adventure
+import o1.adventure.{Adventure, loadSprite}
 
 import java.awt.{RenderingHints, Font}
 import scala.swing.*
@@ -11,10 +11,11 @@ import scala.language.adhocExtensions  // enable extension of swing classes
  */
 class Canvas extends BoxPanel(Orientation.Vertical):
 
-  val hintFont = new Font("Consolas", Font.ITALIC, 15)
   var gameRef: Option[Adventure] = None
-  var renderOrigin = (100,100)
   var textToHighlight = ""
+  private var renderOrigin = (100,100)
+  private val splatterSprite = loadSprite("Adventure/sprites/splatter.png").orNull
+  private val hintFont = new Font("Consolas", Font.ITALIC, 15)
 
   /**
    * Set render origin so that player is right in the center of the screen
@@ -30,11 +31,9 @@ class Canvas extends BoxPanel(Orientation.Vertical):
    */
   def keepPlayerOnScreen(dt: Double) =
     gameRef.foreach( game =>
-      // screen center coordinates
-      val (cx,cy) = (this.size.width/2, this.size.height/2)
+      val (cx,cy) = (this.size.width/2, this.size.height/2) // screen center coordinates
       val (ox,oy) = this.renderOrigin
-      // player coordinates on the screen
-      val (px,py) = (ox + game.player.cx, oy + game.player.cy)
+      val (px,py) = (ox + game.player.cx, oy + game.player.cy)   // player coordinates on the screen
 
       def diffOutside(value: Int, range: Int) = value.sign * (value.abs - range).max(0)
       val (dx,dy) = (diffOutside(cx - px, cx/2), diffOutside(cy - py, cy/2))
@@ -62,9 +61,9 @@ class Canvas extends BoxPanel(Orientation.Vertical):
       game.maze.roomsIterator.foreach(    _.render(g))
       game.maze.corridorsIterator.foreach(_.render(g))
 
-      // render agents
-      for agent <- game.agents do
-        agent.render(g)
+      // render agents or their remains
+      game.agents.filter(!_.alive).foreach( agent => g.drawImage(splatterSprite, agent.cx-20,agent.cy-20, 40,40, null) )
+      game.agents.filter(_.alive).foreach( _.render(g) )
 
       // render hiding covers
       game.maze.roomsIterator.foreach(    _.renderCover(g))
@@ -72,7 +71,7 @@ class Canvas extends BoxPanel(Orientation.Vertical):
 
       if game.isComplete then
         // sky
-        val alpha = ((System.currentTimeMillis() - game.completionTime) / 5000.0).min(1.0)
+        val alpha = ((System.currentTimeMillis() - game.timeOfCompletion) / 5000.0).min(1.0)
         g.setColor(new Color(50,130,255, (alpha*255).toInt))
         g.fillRect(-tx,-ty, this.size.width,this.size.height)
         game.player.render(g)

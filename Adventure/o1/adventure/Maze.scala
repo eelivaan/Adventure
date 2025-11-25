@@ -22,7 +22,7 @@ enum Dir:
 object Dir:
   val arrowSprites = Map[Dir, Option[BufferedImage]](
     Dir.Right -> loadSprite("Adventure/sprites/arrow_east.png"),
-    Dir.Up -> loadSprite("Adventure/sprites/arrow_north.png"),
+    Dir.Up ->   loadSprite("Adventure/sprites/arrow_north.png"),
     Dir.Down -> loadSprite("Adventure/sprites/arrow_south.png"),
     Dir.Left -> loadSprite("Adventure/sprites/arrow_west.png"),
     Dir.Invalid -> None
@@ -34,6 +34,7 @@ object Dir:
     catch {
       case _: Throwable => Invalid
     }
+end Dir
 
 
 /**
@@ -55,16 +56,17 @@ class Maze:
   init()
   startingRoom.reveal()
 
+
   // create the maze based on pattern string
   def init() =
-    var strLines = mazePattern.linesIterator.toVector.map(_.stripTrailing).filter(_.nonEmpty)
-    val lineMaxLen = strLines.map(_.length).max
-    strLines = strLines.map(_.padTo(lineMaxLen, ' '))  // ensure each line has the same width
+    var patternLines = mazePattern.linesIterator.toVector.map(_.stripTrailing).filter(_.nonEmpty)
+    val lineMaxLen = patternLines.map(_.length).max
+    patternLines = patternLines.map(_.padTo(lineMaxLen, ' '))  // ensure each line has the same width
 
     // separate room type and corridor type information
     val roomsDescription = ListBuffer[ListBuffer[Char]]()
     val corridorsDescription = ListBuffer[ListBuffer[Char]]()
-    for (line,rowIndex) <- strLines.zipWithIndex do
+    for (line,rowIndex) <- patternLines.zipWithIndex do
       if rowIndex % 2 == 0 then
         roomsDescription.append(ListBuffer[Char]())
       corridorsDescription.append(ListBuffer[Char]())
@@ -87,17 +89,19 @@ class Maze:
           for ix <- (0 until gridWidth) yield
             val (cx,cy) = (ix*200,iy*200)
             roomsDescription(iy)(ix) match {
+              // create room
               case ch if !ch.isWhitespace =>
                 val size = rng.between(120,160)
                 val newRoom = new Room(cx,cy, size,size, hidden = true, isFinish = ch=='X')
-                if ch == '*' then  // set as starting room
+                if ch == '*' then
                   startingRoom = newRoom
-                newRoom.hint = roomHints.getOrElse(ch, "")
-                newRoom.spawnBoundEnemy = (ch == '#')
-                newRoom.spawnChasingEnemy = (ch == '!')
-                if ch == '$' then
+                else if ch == '$' then
                   newRoom.addItem(new Key())
+                newRoom.hint = roomHints.getOrElse(ch, "")
+                newRoom.spawnCirclingEnemy = (ch == '#')
+                newRoom.spawnChasingEnemy = (ch == '!')
                 Some(newRoom)
+
               // no room
               case _ =>
                 None

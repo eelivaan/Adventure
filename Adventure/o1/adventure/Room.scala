@@ -33,7 +33,7 @@ class Room(
     this.corridors.map( (dir,corridor) => dir -> corridor.otherRoom(this) )
 
   var hint = ""
-  var spawnBoundEnemy = false
+  var spawnCirclingEnemy = false
   var spawnChasingEnemy = false
 
   /*private val decorations = Array.fill(10)(
@@ -77,7 +77,9 @@ class Room(
     if !this.hidden && this.coverAlpha > 0.0 then
       // fade out the covering
       this.coverAlpha -= 0.6 * dt
-      this.corridors.values.foreach(corridor => corridor.coverAlpha = corridor.coverAlpha.min(this.coverAlpha))
+      this.corridors.values.foreach(corridor =>
+        corridor.coverAlpha = corridor.coverAlpha.min(this.coverAlpha)
+      )
   end tick
 
 
@@ -92,7 +94,7 @@ class Room(
         corridor.reveal()
         // rooms with circling enemies need to be shown earlier
         val otherRoom = corridor.otherRoom(this)
-        if otherRoom.spawnBoundEnemy then
+        if otherRoom.spawnCirclingEnemy then
           otherRoom.reveal()
       )
   end reveal

@@ -35,8 +35,9 @@ class Corridor(
   val cx = roomA.cx + dx.sign * (roomA.width/2 + (dx.abs - rw) / 2)
   val cy = roomA.cy + dy.sign * (roomA.height/2 + (dy.abs - rh) / 2)
 
-  // width of the corridor (in x or y direction depending on orientation)
+  /** width of the corridor (in x or y direction depending on orientation */
   val width = 50
+  /** length of the corridor (in x or y direction depending on orientation */
   val length = (if (orientation == Horizontal) then dx.abs - rw else dy.abs - rh) + 6  // small offset to account for antialiasing
 
   var lockingRiddle: Option[Riddle] = None
@@ -164,7 +165,7 @@ class Corridor(
     else
       Some("There is no use for a key here.")
 
-  // unlock directly without any conditioning
+  /** unlock directly without any conditioning */
   def unlock(): Unit =
     this.isLocked = false
     this.doorAnimation = -1 // start door opening animation

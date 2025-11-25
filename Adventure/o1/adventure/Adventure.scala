@@ -15,11 +15,10 @@ class Adventure:
 
   /** All agents in the world including the player */
   val agents: Vector[Agent] = player +: Vector.from(
-    maze.roomsIterator.filter(room => room.spawnBoundEnemy || room.spawnChasingEnemy).map(
-      room => new Slaybot(room, this, huntsPlayer = room.spawnChasingEnemy)
-    ) ++ (
+      maze.roomsIterator.filter(_.spawnCirclingEnemy).map( room => new Slaybot(room, this) ) ++
+      maze.roomsIterator.filter(_.spawnChasingEnemy).map( room => new Chasebot(room, this) ) ++
       maze.corridorsIterator.flatMap(_.gatekeeper)
-    ))
+    )
 
   var gameRunning = true
 
@@ -33,14 +32,14 @@ class Adventure:
   /** Determines if the adventure is complete, that is, if the player has won. */
   def isComplete = player.location.isFinish
 
-  var completionTime = -1L
+  var timeOfCompletion = -1L
 
   /** Determines whether the player lost thereby ending the game. */
   def isOver = !player.alive
 
   /** Returns a message that is to be displayed to the player at the beginning of the game. */
   def welcomeMessage = "Your mission is to find your way out of this maze.\n" +
-                       "Find clues and items that will help you through obstacles.\n" +
+                       "Look for clues and items that will help you through obstacles.\n" +
                        "\n" +
                        "Type \"go left\" to get started.\n"
 

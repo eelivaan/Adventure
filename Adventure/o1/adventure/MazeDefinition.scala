@@ -3,7 +3,6 @@ package o1.adventure
 import java.awt.Color
 import scala.collection.immutable.Map
 
-
 // some color constants
 object cc:
   val floorColor = new Color(100,100,150)
@@ -17,16 +16,24 @@ object cc:
   def withAlpha(c: Color, alpha: Double) =
     new Color(c.getRed, c.getGreen, c.getBlue, (alpha*255).toInt)
 
-
+/*
+  * = starting room
+  # = room with circling enemy
+  ! = room with lurking enemy
+  $ = room with key
+  X = finishing room
+  UPPERCASE letters = other type of rooms
+  lines and lowercase letters = corridors
+*/
 val mazePattern = """
-  0-Ng0-X
-    k
+  0-Ng0kXeR-S-T
+    k       k
   Pk0 $-0-F-0-#-0g0 $
     | | | | | |   | |
 !-0-E-#-0 ! $g0-* #-O
-      b     | |   | |
-    D-C-B-A-#-0kO-# 0 X
-    c         k     | #
+  |   b     | |   | |
+  0gD-C-B-A-#-0kO-# # X
+    c         k     | k
     X         G-H-L-Md0
 """
 
@@ -34,14 +41,15 @@ val roomHints = Map[Char, String](
   'A' -> "1+1", 'B' -> "2^3", 'C' -> "3!", 'D' -> "4/5",
   'E' -> "<<", 'F' -> "!!",
   'G' -> "A=10", 'H' -> "D=13", 'L' -> "F=15", 'M' -> "BCCE=?",
-  'N' -> ">>", 'P' -> ":P"
+  'N' -> ">>", 'P' -> ":P",
+  'R' -> "0xFF", 'S' -> "<=>", 'T' -> "0b11111111"
 )
 
 val corridorBlockings = Map(
-  'a' -> CodeLock("42"),
   'b' -> CodeLock("286"),
   'c' -> CodeLock("2864|2865"),
   'd' -> CodeLock("11121214"),
+  'e' -> CodeLock("255"),
   'g' -> Gatekeeper,
   'k' -> Key,
 )

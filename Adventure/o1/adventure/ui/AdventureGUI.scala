@@ -14,21 +14,25 @@ import o1.adventure.Adventure
 
 /**
  * Main Application object
+ * Use this to run the game.
  */
 object AdventureGUI extends SimpleSwingApplication:
+
   // neat font for the text areas
   val niceFont = new Font("Consolas", Font.PLAIN, 14)
   val bgcolor = new Color(0,0,0)
   val fgcolor = new Color(0,255,0)
-  // enable modern GUI look
+
+  // enable modern GUI style
   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
   UIManager.put("Panel.background", bgcolor)
 
   var game = new Adventure()
   val messageBuffer = Queue[Char]()
+  val commandBuffer = Queue[String]()
   val commandHistory = ArrayBuffer[String]("go up", "go down", "go right", "go left")
 
-  // Components:
+  // UI Components:
 
   val textDispaly = new TextArea():
     editable = false
@@ -59,9 +63,15 @@ object AdventureGUI extends SimpleSwingApplication:
     border = new EmptyBorder(10,10,10,10)
     gameRef = Some(game)
 
+  // main window definition:
 
-  // main window definition
   def top = new MainFrame:
+    this.contents = canvas
+    this.title = game.title
+    this.pack()
+    this.centerOnScreen()
+    inputField.requestFocusInWindow()
+    canvas.centerPlayerOnScreen()
 
     // Events:
 
@@ -92,22 +102,14 @@ object AdventureGUI extends SimpleSwingApplication:
                 inputField.text = commandHistory.lastOption.getOrElse("")
             }
 
-          // end the game
+          // exit
           case Key.Escape =>
             quit()
 
           case _ =>
         }
     }
-
-    this.contents = canvas
-    this.title = game.title
-    this.pack()
-    this.centerOnScreen()
-    inputField.requestFocusInWindow()
-    canvas.centerPlayerOnScreen()
   end top
-
 
   // timer for ticking 30 times per second
   val tickTimer = new Timer(33, Swing.ActionListener { _ => this.onTick() })
@@ -121,8 +123,11 @@ object AdventureGUI extends SimpleSwingApplication:
     game = new Adventure()
     canvas.gameRef = Some(game)
     canvas.centerPlayerOnScreen()
+    messageBuffer.clear()
+    commandBuffer.clear()
     showMessage("")
     inputField.text = ""
+  end restartGame
 
 
   private def onTick() =
@@ -138,17 +143,23 @@ object AdventureGUI extends SimpleSwingApplication:
         showMessage(game.victoryMessage)
         game.gameRunning = false
         game.player.cheer = true
-        game.completionTime = curTime
+        game.timeOfCompletion = curTime
+
       else if game.isOver then
         // game is lost
         showMessage(game.gameOverMessage)
         game.gameRunning = false
         inputField.text = "restart"
 
+      else if commandBuffer.nonEmpty then
+        submitCommand(commandBuffer.dequeue())
+    end if
+
     // type characters onto screen from the message buffer
     if this.messageBuffer.nonEmpty then
       textDispaly.text += this.messageBuffer.dequeue()
 
+    // repaint graphics
     canvas.textToHighlight = textDispaly.text
     canvas.repaint()
 
@@ -159,8 +170,11 @@ object AdventureGUI extends SimpleSwingApplication:
   private def submitCommand(command: String) =
     commandHistory.filterInPlace(_ != command)
     commandHistory += command
-    val response = game.player.parseCommand(command)
-    showMessage(response)
+    if game.player.isMoving then
+      commandBuffer += command
+    else
+      val response = game.player.parseCommand(command)
+      showMessage(response)
     inputField.text = ""
 
 
@@ -197,3 +211,17 @@ object AdventureGUI extends SimpleSwingApplication:
 
 end AdventureGUI
 
+
+/*
+// for curiosity
+@main def countCodeLines() =
+  val files = Vector("ui/AdventureGUI", "ui/Canvas", "Adventure", "Agent", "Corridor", "Enemies", "Items", "Maze",
+                     "MazeDefinition", "Neutrals", "Player", "Riddle", "Room")
+  var total = 0
+  for filename <- files do
+    val file = Source.fromFile("Adventure/o1/adventure/" + filename + ".scala")
+    val fileLines = file.getLines.length
+    println(s"${filename.padTo(15,' ')}: $fileLines lines")
+    total += fileLines
+  println("\nTotal code lines: " + total)
+*/
